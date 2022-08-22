@@ -77,10 +77,20 @@ static void process_node(const struct lysc_node *node, size_t level)
 	if (!node)
 		return;
 
-	printf("%*c %s [%s]\n",
+	printf("%*c %s [%s]",
 		(int)(level * 2), ' ',
 		node->name,
 		lys_nodetype2str(node->nodetype));
+
+	if (node->nodetype & LYS_LIST) {
+		const struct lysc_node *iter = NULL;
+		LY_LIST_FOR(lysc_node_child(node), iter) {
+			if (lysc_is_key(iter))
+				printf(" %s", iter->name);
+		}
+	}
+
+	printf("\n");
 	iterate_nodes(lysc_node_child(node), level + 1);
 }
 
