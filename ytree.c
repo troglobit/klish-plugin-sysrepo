@@ -71,6 +71,23 @@ sr_module_is_internal(const struct lys_module *ly_mod)
     return 0;
 }
 
+static void identityref(struct lysc_ident *ident)
+{
+	LY_ARRAY_COUNT_TYPE u = 0;
+
+	if (!ident)
+		return;
+
+	if (!ident->derived) {
+		printf(" %s", ident->name);
+		return;
+	}
+
+	LY_ARRAY_FOR(ident->derived, u) {
+		identityref(ident->derived[u]);
+	}
+
+}
 
 static void process_node(const struct lysc_node *node, size_t level)
 {
@@ -88,7 +105,21 @@ static void process_node(const struct lysc_node *node, size_t level)
 			if (lysc_is_key(iter))
 				printf(" %s", iter->name);
 		}
+
+	} else if (node->nodetype & LYS_LEAF) {
+		const struct lysc_node_leaf *leaf =
+			(const struct lysc_node_leaf *)node;
+		const struct lysc_type *type = leaf->type;
+		if (type->basetype == LY_TYPE_IDENT) {
+			struct lysc_type_identityref *iref =
+				(struct lysc_type_identityref *)type;
+			LY_ARRAY_COUNT_TYPE u = 0;
+			LY_ARRAY_FOR(iref->bases, u) {
+				identityref(iref->bases[u]);
+			}
+		}
 	}
+
 
 	printf("\n");
 	iterate_nodes(lysc_node_child(node), level + 1);
