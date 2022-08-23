@@ -7,9 +7,16 @@
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
+#include <faux/faux.h>
+#include <faux/argv.h>
+
+#define NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
+
 
 static void process_node(const struct lysc_node *node, size_t level);
 static void iterate_nodes(const struct lysc_node *node, size_t level);
+
+
 
 
 static int
@@ -148,35 +155,14 @@ static void iterate_nodes(const struct lysc_node *node, size_t level)
 }
 
 
-int main(void)
+void show(const struct ly_ctx *ctx)
 {
-	int ret = -1;
-	int err = SR_ERR_OK;
-	sr_conn_ctx_t *conn = NULL;
-	sr_session_ctx_t *sess = NULL;
-	const struct ly_ctx *lyctx = NULL;
-	uint32_t i = 0;
 	struct lys_module *module = NULL;
-
-	err = sr_connect(SR_CONN_DEFAULT, &conn);
-	if (err) {
-		printf("Error\n");
-		goto out;
-	}
-	err = sr_session_start(conn, SR_DS_RUNNING, &sess);
-	if (err) {
-		printf("Error2\n");
-		goto out;
-	}
-	lyctx = sr_acquire_context(conn);
-	if (!lyctx) {
-		printf("Cannot acquire context\n");
-		goto out;
-	}
+	uint32_t i = 0;
 
 	// Iterate all modules
 	i = 0;
-	while ((module = ly_ctx_get_module_iter(lyctx, &i))) {
+	while ((module = ly_ctx_get_module_iter(ctx, &i))) {
 		if (sr_module_is_internal(module))
 			continue;
 		if (!module->compiled)
@@ -189,6 +175,84 @@ int main(void)
 		iterate_nodes(module->compiled->data, 1);
 	}
 
+}
+
+
+const struct lysc_node *ppath2path_node(const struct lys_module *module,
+	const struct lysc_node *parent, const faux_argv_t *argv)
+{
+	const struct lysc_node *node = NULL;
+	const char *search = faux_argv_index(argv, 0);
+
+	printf("searching for %s\n", search);
+
+	node = lys_find_child(node, module, search, 0,
+		NODETYPE_CONF, 0);
+
+	if (node)
+		printf("%s\n", search);
+
+	return node;
+}
+
+
+void ppath2path(const struct ly_ctx *ctx, const char *ppath)
+{
+	faux_argv_t *argv = NULL;
+	struct lys_module *module = NULL;
+	uint32_t i = 0;
+
+	argv = faux_argv_new();
+	faux_argv_parse(argv, ppath);
+
+	// Iterate all modules
+	i = 0;
+	while ((module = ly_ctx_get_module_iter(ctx, &i))) {
+		if (sr_module_is_internal(module))
+			continue;
+		if (!module->compiled)
+			continue;
+		if (!module->implemented)
+			continue;
+		if (!module->compiled->data)
+			continue;
+		printf("Module %s\n", module->name);
+		if (ppath2path_node(module, NULL, argv)) {
+			printf("Found\n");
+		}
+	}
+
+}
+
+
+int main(void)
+{
+	int ret = -1;
+	int err = SR_ERR_OK;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	const struct ly_ctx *ctx = NULL;
+
+	err = sr_connect(SR_CONN_DEFAULT, &conn);
+	if (err) {
+		printf("Error\n");
+		goto out;
+	}
+	err = sr_session_start(conn, SR_DS_RUNNING, &sess);
+	if (err) {
+		printf("Error2\n");
+		goto out;
+	}
+	ctx = sr_acquire_context(conn);
+	if (!ctx) {
+		printf("Cannot acquire context\n");
+		goto out;
+	}
+
+
+	ppath2path(ctx, "interfaces interface eth0 type");
+
+//	show(ctx);
 
 //	printf("Ok\n");
 	ret = 0;
