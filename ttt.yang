@@ -1,0 +1,19 @@
+module ttt {
+  namespace "urn:ttt";
+  prefix t;
+
+  container test {
+    list acl {
+      key "name";
+      leaf name {
+        type string;
+      }
+      leaf comment {
+        type string;
+      }
+      leaf-list multi {
+        type string;
+      }
+    }
+  }
+}

@@ -10,7 +10,16 @@
 #include <faux/faux.h>
 #include <faux/argv.h>
 
+#include "pline.h"
+
 #define NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
+
+
+struct ipath {
+	struct ly_path *path_arr;
+	const char *value;
+};
+
 
 
 static void process_node(const struct lysc_node *node, size_t level);
@@ -101,8 +110,9 @@ static void process_node(const struct lysc_node *node, size_t level)
 	if (!node)
 		return;
 
-	printf("%*c %s [%s]",
+	printf("%*c %s:%s [%s]",
 		(int)(level * 2), ' ',
+		node->module->name,
 		node->name,
 		lys_nodetype2str(node->nodetype));
 
@@ -232,6 +242,7 @@ int main(void)
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
 	const struct ly_ctx *ctx = NULL;
+	faux_argv_t *argv = faux_argv_new();
 
 	err = sr_connect(SR_CONN_DEFAULT, &conn);
 	if (err) {
@@ -249,12 +260,14 @@ int main(void)
 		goto out;
 	}
 
+	faux_argv_parse(argv, "interfaces interface eth0 type ethernet");
+	pline_parse(ctx, argv, 0);
+	faux_argv_free(argv);
 
-	ppath2path(ctx, "interfaces interface eth0 type");
+//	ppath2path(ctx, "interfaces interface eth0 type");
 
 //	show(ctx);
 
-//	printf("Ok\n");
 	ret = 0;
 out:
 	sr_release_context(conn);

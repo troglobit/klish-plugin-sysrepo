@@ -1,36 +1,64 @@
-/** @file ipath.h
- * @brief Internal path structures.
+/** @file pline.h
+ * @brief Plain line.
  */
 
-#ifndef _ipath_h
-#define _ipath_h
+#ifndef _pline_h
+#define _pline_h
 
-#include <faux/faux.h>
-#include <faux/list.h>
+#include <sysrepo.h>
+#include <sysrepo/xpath.h>
 
-typedef struct ipath_s ipath_t;
-typedef faux_list_node_t ipath_node_t;
+// Plain EXPRession
+typedef struct {
+	char *xpath;
+	char *value;
+} pexpr_t;
+
+
+// Possible types of completion source
+typedef enum {
+	PCOMPL_NODE = 0,
+	PCOMPL_TYPE = 1,
+} pcompl_type_e;
+
+
+// Plain COMPLetion
+typedef struct {
+	struct lysc_node *node;
+	char *xpath;
+} pcompl_t;
+
+
+// Plain LINE
+typedef struct pline_s {
+	faux_list_t *exprs;
+	faux_list_t *compls;
+} pline_t;
 
 C_DECL_BEGIN
 
-ipath_t *ipath_new(void);
-void ipath_free(ipath_t *fargv);
-void ipath_set_quotes(ipath_t *fargv, const char *quotes);
 
-ssize_t ipath_len(ipath_t *fargv);
-ipath_node_t *ipath_iter(const ipath_t *fargv);
-const char *ipath_each(ipath_node_t **iter);
-const char *ipath_current(ipath_node_t *iter);
-const char *ipath_index(const ipath_t *fargv, size_t index);
+pline_t *pline_new(void);
+void pline_free(pline_t *pline);
+pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags);
+pexpr_t *pline_current_expr(pline_t *pline);
 
-ssize_t ipath_parse(ipath_t *fargv, const char *str);
-bool_t ipath_add(ipath_t *fargv, const char *arg);
+//void pline_set_quotes(pline_t *fargv, const char *quotes);
 
-bool_t ipath_is_continuable(const ipath_t *fargv);
-void ipath_set_continuable(ipath_t *fargv, bool_t continuable);
+//ssize_t pline_len(const pline_t *fargv);
+//pline_node_t *pline_iter(const pline_t *fargv);
+//const char *pline_each(pline_node_t **iter);
+//const char *pline_current(pline_node_t *iter);
+//const char *pline_index(const pline_t *fargv, size_t index);
 
-bool_t ipath_is_last(ipath_node_t *iter);
+//ssize_t pline_parse(pline_t *fargv, const char *str);
+//bool_t pline_add(pline_t *fargv, const char *arg);
+
+//bool_t pline_is_continuable(const pline_t *fargv);
+//void pline_set_continuable(pline_t *fargv, bool_t continuable);
+
+//bool_t pline_is_last(pline_node_t *iter);
 
 C_DECL_END
 
-#endif				/* _ipath_h */
+#endif				/* _pline_h */
