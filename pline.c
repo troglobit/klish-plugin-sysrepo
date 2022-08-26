@@ -136,20 +136,66 @@ pexpr_t *pline_current_expr(pline_t *pline)
 }
 
 
+void pline_add_compl(pline_t *pline,
+	pcompl_type_e type, const struct lysc_node *node, char *xpath)
+{
+	pcompl_t *pcompl = NULL;
+
+	assert(pline);
+
+	pcompl = pcompl_new();
+	pcompl->type = type;
+	pcompl->node = node;
+	if (xpath)
+		pcompl->xpath = faux_str_dup(xpath);
+	faux_list_add(pline->compls, pcompl);
+}
+
+
+void pline_add_compl_subtree(pline_t *pline, const struct lysc_node *subtree)
+{
+	const struct lysc_node *iter = NULL;
+
+	assert(pline);
+	if (!subtree)
+		return;
+
+	LY_LIST_FOR(subtree, iter) {
+		if (!(iter->nodetype & NODETYPE_CONF))
+			continue;
+		if (!(iter->flags & LYS_CONFIG_W))
+			continue;
+		pline_add_compl(pline, PCOMPL_NODE, iter, NULL);
+	}
+}
+
+
 void pline_debug(pline_t *pline)
 {
 	faux_list_node_t *iter = NULL;
 	pexpr_t *pexpr = NULL;
 	pcompl_t *pcompl = NULL;
 
+	printf("=== Expressions:\n\n");
+
 	iter = faux_list_head(pline->exprs);
 	while (pexpr = (pexpr_t *)faux_list_each(&iter)) {
-		printf("\n");
 		printf("pexpr.xpath = %s\n", pexpr->xpath ? pexpr->xpath : "NULL");
 		printf("pexpr.value = %s\n", pexpr->value ? pexpr->value : "NULL");
 		printf("pexpr.active = %s\n", pexpr->active ? "true" : "false");
+		printf("\n");
 	}
 
+	printf("=== Completions:\n\n");
+
+	iter = faux_list_head(pline->compls);
+	while (pcompl = (pcompl_t *)faux_list_each(&iter)) {
+		printf("pcompl.type = %s\n", (pcompl->type == PCOMPL_NODE) ?
+			"PCOMPL_NODE" : "PCOMPL_TYPE");
+		printf("pcompl.node = %s\n", pcompl->node ? pcompl->node->name : "NULL");
+		printf("pcompl.xpath = %s\n", pcompl->xpath ? pcompl->xpath : "NULL");
+		printf("\n");
+	}
 }
 
 
@@ -222,23 +268,43 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 			pexpr->active = BOOL_TRUE;
 		}
 
-		if (!str)
-			break;
-
 		// Root of the module
 		if (!node) {
+
+			// Completion
+			if (!str) {
+				pline_add_compl_subtree(pline,
+					module->compiled->data);
+				return BOOL_FALSE;
+			}
+
+			// Next element
 			node = find_child(module->compiled->data, str);
 			if (!node)
 				return BOOL_FALSE;
 
 		// Container
 		} else if (node->nodetype & LYS_CONTAINER) {
+
+			// Completion
+			if (!str) {
+				pline_add_compl_subtree(pline,
+					lysc_node_child(node));
+				break;
+			}
+
+			// Next element
 			node = find_child(lysc_node_child(node), str);
 
 		// List
 		} else if (node->nodetype & LYS_LIST) {
 			const struct lysc_node *iter = NULL;
 
+			// Completion
+			if (!str)
+				break;
+
+			// Next element
 			if (!is_rollback) {
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;
@@ -268,6 +334,10 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 			struct lysc_node_leaf *leaf =
 				(struct lysc_node_leaf *)node;
 
+			// Completion
+			if (!str)
+				break;
+
 			if (leaf->type->basetype != LY_TYPE_EMPTY)
 				pexpr->value = faux_str_dup(str);
 			// Expression was completed
@@ -279,6 +349,10 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 		// Leaf-list
 		} else if (node->nodetype & LYS_LEAFLIST) {
 			char *tmp = NULL;
+
+			// Completion
+			if (!str)
+				break;
 
 			tmp = faux_str_sprintf("[.='%s']", str);
 			faux_str_cat(&pexpr->xpath, tmp);

@@ -26,7 +26,7 @@ typedef enum {
 // Plain COMPLetion
 typedef struct {
 	pcompl_type_e type;
-	struct lysc_node *node;
+	const struct lysc_node *node;
 	char *xpath;
 } pcompl_t;
 
