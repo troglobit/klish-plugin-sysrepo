@@ -335,9 +335,12 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 				(struct lysc_node_leaf *)node;
 
 			// Completion
-			if (!str)
+			if (!str) {
+				pline_add_compl(pline, PCOMPL_TYPE, node, NULL);
 				break;
+			}
 
+			// Next element
 			if (leaf->type->basetype != LY_TYPE_EMPTY)
 				pexpr->value = faux_str_dup(str);
 			// Expression was completed
@@ -351,8 +354,11 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 			char *tmp = NULL;
 
 			// Completion
-			if (!str)
+			if (!str) {
+				pline_add_compl(pline,
+					PCOMPL_TYPE, node, pexpr->xpath);
 				break;
+			}
 
 			tmp = faux_str_sprintf("[.='%s']", str);
 			faux_str_cat(&pexpr->xpath, tmp);
