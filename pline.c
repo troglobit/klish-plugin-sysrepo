@@ -300,33 +300,53 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 		} else if (node->nodetype & LYS_LIST) {
 			const struct lysc_node *iter = NULL;
 
-			// Completion
-			if (!str)
-				break;
-
 			// Next element
 			if (!is_rollback) {
+				bool_t break_upper_loop = BOOL_FALSE;
+
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;
 					struct lysc_node_leaf *leaf =
 						(struct lysc_node_leaf *)iter;
+
 					if (!(iter->nodetype & LYS_LEAF))
 						continue;
 					if (!(iter->flags & LYS_KEY))
 						continue;
 					assert (leaf->type->basetype != LY_TYPE_EMPTY);
+
+					// Completion
+					if (!str) {
+						char *tmp = NULL;
+
+						tmp = faux_str_sprintf("%s/%s",
+							pexpr->xpath, leaf->name);
+						pline_add_compl(pline,
+							PCOMPL_TYPE, iter, tmp);
+						faux_str_free(tmp);
+						break_upper_loop = BOOL_TRUE;
+						break;
+					}
+
 					tmp = faux_str_sprintf("[%s='%s']",
 						leaf->name, str);
 					faux_str_cat(&pexpr->xpath, tmp);
 					faux_str_free(tmp);
 					faux_argv_each(&arg);
 					str = (const char *)faux_argv_current(arg);
-					if (!str)
-						break;
 				}
-				if (!str)
+				if (break_upper_loop)
 					break;
 			}
+
+			// Completion
+			if (!str) {
+				pline_add_compl_subtree(pline,
+					lysc_node_child(node));
+				break;
+			}
+
+			// Next element
 			node = find_child(lysc_node_child(node), str);
 
 		// Leaf
