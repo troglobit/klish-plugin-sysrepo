@@ -171,15 +171,13 @@ static const struct lysc_node *find_child(const struct lysc_node *node,
 }
 
 
-
-
-
-
-bool_t parse_module(const struct lys_module *module, faux_argv_node_t **arg,
+bool_t pline_parse_module(const struct lys_module *module, faux_argv_node_t **arg,
 	pline_t *pline)
 {
 	const struct lysc_node *node = NULL;
 	char *rollback_xpath = NULL;
+	// Rollback is a mechanism to roll to previous node while
+	// oneliners parsing
 	bool_t rollback = BOOL_FALSE;
 
 	do {
@@ -193,9 +191,9 @@ bool_t parse_module(const struct lys_module *module, faux_argv_node_t **arg,
 			char *tmp = NULL;
 
 			// Save rollback Xpath (for oneliners) before leaf node
-			// Only leaf node allows to "rollback"
+			// Only leaf and leaf-list node allows to "rollback"
 			// the path and add additional statements
-			if (node->nodetype & LYS_LEAF) {
+			if (node->nodetype & (LYS_LEAF | LYS_LEAFLIST)) {
 				faux_str_free(rollback_xpath);
 				rollback_xpath = faux_str_dup(pexpr->xpath);
 			}
@@ -205,36 +203,30 @@ bool_t parse_module(const struct lys_module *module, faux_argv_node_t **arg,
 				node->module->name, node->name);
 			faux_str_cat(&pexpr->xpath, tmp);
 			faux_str_free(tmp);
-			printf("%s\n", pexpr->xpath);
+//			printf("%s\n", pexpr->xpath);
 
 			// Activate current expression. Because it really has
 			// new component
 			pexpr->active = BOOL_TRUE;
 		}
 
-printf("for str = %s\n", str);
-
 		if (!str)
 			break;
 
 		// Root of the module
 		if (!node) {
-printf("Module\n");
 			node = find_child(module->compiled->data, str);
 			if (!node)
 				return BOOL_FALSE;
-//			continue; // Don't get next arg
 
 		// Container
 		} else if (node->nodetype & LYS_CONTAINER) {
-printf("Container\n");
 			node = find_child(lysc_node_child(node), str);
 
 		// List
 		} else if (node->nodetype & LYS_LIST) {
-printf("List\n");
 			const struct lysc_node *iter = NULL;
-			printf("str = %s\n", str);
+
 			if (!is_rollback) {
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;
@@ -249,10 +241,8 @@ printf("List\n");
 						leaf->name, str);
 					faux_str_cat(&pexpr->xpath, tmp);
 					faux_str_free(tmp);
-					printf("%s\n", pexpr->xpath);
 					faux_argv_each(arg);
 					str = (const char *)faux_argv_current(*arg);
-printf("list str = %s\n", str);
 					if (!str)
 						break;
 				}
@@ -260,18 +250,32 @@ printf("list str = %s\n", str);
 					break;
 			}
 			node = find_child(lysc_node_child(node), str);
-printf("list next node = %s\n", node ? node->name : "NULL");
 
 		// Leaf
 		} else if (node->nodetype & LYS_LEAF) {
-printf("Leaf\n");
 			struct lysc_node_leaf *leaf =
 				(struct lysc_node_leaf *)node;
 			pexpr_t *new = NULL;
-			if (leaf->type->basetype != LY_TYPE_EMPTY) {
+
+			if (leaf->type->basetype != LY_TYPE_EMPTY)
 				pexpr->value = faux_str_dup(str);
-printf("value=%s\n", pexpr->value);
-			}
+			// Expression was completed
+			// So rollback (for oneliners)
+			node = node->parent;
+			new = pexpr_new();
+			new->xpath = faux_str_dup(rollback_xpath);
+			faux_list_add(pline->exprs, new);
+			rollback = BOOL_TRUE;
+
+		// Leaf-list
+		} else if (node->nodetype & LYS_LEAFLIST) {
+			pexpr_t *new = NULL;
+			char *tmp = NULL;
+
+			tmp = faux_str_sprintf("[.='%s']", str);
+			faux_str_cat(&pexpr->xpath, tmp);
+			faux_str_free(tmp);
+
 			// Expression was completed
 			// So rollback (for oneliners)
 			node = node->parent;
@@ -288,24 +292,6 @@ printf("value=%s\n", pexpr->value);
 
 	return BOOL_TRUE;
 }
-
-
-/*
-bool_t parse_tree(const struct lysc_node *tree, faux_argv_node_t **arg,
-	pline_t *pline)
-{
-	const struct lysc_node *node = NULL;
-	const char *str = (const char *)faux_argv_current(*arg);
-
-	node = find_child(tree, str);
-	if (node) {
-		parse_node(node, arg, pline);
-		return BOOL_TRUE;
-	}
-
-	return BOOL_FALSE;
-}
-*/
 
 
 pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags)
@@ -330,7 +316,7 @@ pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags
 			continue;
 		if (!module->compiled->data)
 			continue;
-		if (parse_module(module, &arg, pline))
+		if (pline_parse_module(module, &arg, pline))
 			break; // Found
 	}
 
