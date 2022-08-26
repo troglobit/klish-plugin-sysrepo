@@ -30,6 +30,11 @@ pexpr_t *pexpr_new(void)
 	if (!pexpr)
 		return NULL;
 
+	// Initialize
+	pexpr->xpath = NULL;
+	pexpr->value = NULL;
+	pexpr->active = BOOL_FALSE;
+
 	return pexpr;
 }
 
@@ -54,6 +59,11 @@ pcompl_t *pcompl_new(void)
 	assert(pcompl);
 	if (!pcompl)
 		return NULL;
+
+	// Initialize
+	pcompl->type = PCOMPL_NODE;
+	pcompl->node = NULL;
+	pcompl->xpath = NULL;
 
 	return pcompl;
 }
@@ -114,6 +124,23 @@ pexpr_t *pline_current_expr(pline_t *pline)
 }
 
 
+void pline_debug(pline_t *pline)
+{
+	faux_list_node_t *iter = NULL;
+	pexpr_t *pexpr = NULL;
+	pcompl_t *pcompl = NULL;
+
+	iter = faux_list_head(pline->exprs);
+	while (pexpr = (pexpr_t *)faux_list_each(&iter)) {
+		printf("\n");
+		printf("pexpr.xpath = %s\n", pexpr->xpath ? pexpr->xpath : "NULL");
+		printf("pexpr.value = %s\n", pexpr->value ? pexpr->value : "NULL");
+		printf("pexpr.active = %s\n", pexpr->active ? "true" : "false");
+	}
+
+}
+
+
 static int
 sr_ly_module_is_internal(const struct lys_module *ly_mod);
 
@@ -152,17 +179,37 @@ bool_t parse_module(const struct lys_module *module, faux_argv_node_t **arg,
 	pline_t *pline)
 {
 	const struct lysc_node *node = NULL;
+	char *rollback_xpath = NULL;
+	bool_t rollback = BOOL_FALSE;
 
 	do {
 		pexpr_t *pexpr = pline_current_expr(pline);
 		const char *str = (const char *)faux_argv_current(*arg);
+		bool_t is_rollback = rollback;
 
-		if (node) {
-			char *tmp = faux_str_sprintf("/%s:%s",
+		rollback = BOOL_FALSE;
+
+		if (node && !is_rollback) {
+			char *tmp = NULL;
+
+			// Save rollback Xpath (for oneliners) before leaf node
+			// Only leaf node allows to "rollback"
+			// the path and add additional statements
+			if (node->nodetype & LYS_LEAF) {
+				faux_str_free(rollback_xpath);
+				rollback_xpath = faux_str_dup(pexpr->xpath);
+			}
+
+			// Add current node to Xpath
+			tmp = faux_str_sprintf("/%s:%s",
 				node->module->name, node->name);
 			faux_str_cat(&pexpr->xpath, tmp);
 			faux_str_free(tmp);
 			printf("%s\n", pexpr->xpath);
+
+			// Activate current expression. Because it really has
+			// new component
+			pexpr->active = BOOL_TRUE;
 		}
 
 printf("for str = %s\n", str);
@@ -188,28 +235,30 @@ printf("Container\n");
 printf("List\n");
 			const struct lysc_node *iter = NULL;
 			printf("str = %s\n", str);
-			LY_LIST_FOR(lysc_node_child(node), iter) {
-				char *tmp = NULL;
-				struct lysc_node_leaf *leaf =
-					(struct lysc_node_leaf *)iter;
-				if (!(iter->nodetype & LYS_LEAF))
-					continue;
-				if (!(iter->flags & LYS_KEY))
-					continue;
-				assert (leaf->type->basetype != LY_TYPE_EMPTY);
-				tmp = faux_str_sprintf("[%s='%s']",
-					leaf->name, str);
-				faux_str_cat(&pexpr->xpath, tmp);
-				faux_str_free(tmp);
-				printf("%s\n", pexpr->xpath);
-				faux_argv_each(arg);
-				str = (const char *)faux_argv_current(*arg);
+			if (!is_rollback) {
+				LY_LIST_FOR(lysc_node_child(node), iter) {
+					char *tmp = NULL;
+					struct lysc_node_leaf *leaf =
+						(struct lysc_node_leaf *)iter;
+					if (!(iter->nodetype & LYS_LEAF))
+						continue;
+					if (!(iter->flags & LYS_KEY))
+						continue;
+					assert (leaf->type->basetype != LY_TYPE_EMPTY);
+					tmp = faux_str_sprintf("[%s='%s']",
+						leaf->name, str);
+					faux_str_cat(&pexpr->xpath, tmp);
+					faux_str_free(tmp);
+					printf("%s\n", pexpr->xpath);
+					faux_argv_each(arg);
+					str = (const char *)faux_argv_current(*arg);
 printf("list str = %s\n", str);
+					if (!str)
+						break;
+				}
 				if (!str)
 					break;
 			}
-			if (!str)
-				break;
 			node = find_child(lysc_node_child(node), str);
 printf("list next node = %s\n", node ? node->name : "NULL");
 
@@ -218,17 +267,24 @@ printf("list next node = %s\n", node ? node->name : "NULL");
 printf("Leaf\n");
 			struct lysc_node_leaf *leaf =
 				(struct lysc_node_leaf *)node;
+			pexpr_t *new = NULL;
 			if (leaf->type->basetype != LY_TYPE_EMPTY) {
 				pexpr->value = faux_str_dup(str);
 printf("value=%s\n", pexpr->value);
 			}
 			// Expression was completed
-			node = node->parent; // For oneliners
-			faux_list_add(pline->exprs, pexpr_new());
+			// So rollback (for oneliners)
+			node = node->parent;
+			new = pexpr_new();
+			new->xpath = faux_str_dup(rollback_xpath);
+			faux_list_add(pline->exprs, new);
+			rollback = BOOL_TRUE;
 		}
 
 		faux_argv_each(arg);
 	} while (node);
+
+	faux_str_free(rollback_xpath);
 
 	return BOOL_TRUE;
 }

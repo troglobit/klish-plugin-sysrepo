@@ -12,6 +12,7 @@
 typedef struct {
 	char *xpath;
 	char *value;
+	bool_t active;
 } pexpr_t;
 
 
@@ -24,6 +25,7 @@ typedef enum {
 
 // Plain COMPLetion
 typedef struct {
+	pcompl_type_e type;
 	struct lysc_node *node;
 	char *xpath;
 } pcompl_t;
@@ -42,6 +44,7 @@ pline_t *pline_new(void);
 void pline_free(pline_t *pline);
 pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags);
 pexpr_t *pline_current_expr(pline_t *pline);
+void pline_debug(pline_t *pline);
 
 //void pline_set_quotes(pline_t *fargv, const char *quotes);
 

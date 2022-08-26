@@ -235,14 +235,15 @@ void ppath2path(const struct ly_ctx *ctx, const char *ppath)
 }
 
 
-int main(void)
+int main(int argc, char **argv)
 {
 	int ret = -1;
 	int err = SR_ERR_OK;
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
 	const struct ly_ctx *ctx = NULL;
-	faux_argv_t *argv = faux_argv_new();
+	faux_argv_t *args = faux_argv_new();
+	pline_t *pline = NULL;
 
 	err = sr_connect(SR_CONN_DEFAULT, &conn);
 	if (err) {
@@ -260,9 +261,11 @@ int main(void)
 		goto out;
 	}
 
-	faux_argv_parse(argv, "interfaces interface eth0 type ethernet");
-	pline_parse(ctx, argv, 0);
-	faux_argv_free(argv);
+	faux_argv_parse(args, argv[1]);
+	pline = pline_parse(ctx, args, 0);
+	faux_argv_free(args);
+	pline_debug(pline);
+	pline_free(pline);
 
 //	ppath2path(ctx, "interfaces interface eth0 type");
 
