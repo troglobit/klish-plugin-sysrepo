@@ -171,9 +171,10 @@ static const struct lysc_node *find_child(const struct lysc_node *node,
 }
 
 
-bool_t pline_parse_module(const struct lys_module *module, faux_argv_node_t **arg,
+bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 	pline_t *pline)
 {
+	faux_argv_node_t *arg = faux_argv_iter(argv);
 	const struct lysc_node *node = NULL;
 	char *rollback_xpath = NULL;
 	// Rollback is a mechanism to roll to previous node while
@@ -182,7 +183,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_node_t **ar
 
 	do {
 		pexpr_t *pexpr = pline_current_expr(pline);
-		const char *str = (const char *)faux_argv_current(*arg);
+		const char *str = (const char *)faux_argv_current(arg);
 		bool_t is_rollback = rollback;
 
 		rollback = BOOL_FALSE;
@@ -203,7 +204,6 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_node_t **ar
 				node->module->name, node->name);
 			faux_str_cat(&pexpr->xpath, tmp);
 			faux_str_free(tmp);
-//			printf("%s\n", pexpr->xpath);
 
 			// Activate current expression. Because it really has
 			// new component
@@ -241,8 +241,8 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_node_t **ar
 						leaf->name, str);
 					faux_str_cat(&pexpr->xpath, tmp);
 					faux_str_free(tmp);
-					faux_argv_each(arg);
-					str = (const char *)faux_argv_current(*arg);
+					faux_argv_each(&arg);
+					str = (const char *)faux_argv_current(arg);
 					if (!str)
 						break;
 				}
@@ -285,7 +285,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_node_t **ar
 			rollback = BOOL_TRUE;
 		}
 
-		faux_argv_each(arg);
+		faux_argv_each(&arg);
 	} while (node);
 
 	faux_str_free(rollback_xpath);
@@ -299,7 +299,6 @@ pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags
 	struct lys_module *module = NULL;
 	pline_t *pline = pline_new();
 	uint32_t i = 0;
-	faux_argv_node_t *arg = faux_argv_iter(argv);
 
 	assert(ctx);
 	if (!ctx)
@@ -316,7 +315,7 @@ pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags
 			continue;
 		if (!module->compiled->data)
 			continue;
-		if (pline_parse_module(module, &arg, pline))
+		if (pline_parse_module(module, argv, pline))
 			break; // Found
 	}
 
