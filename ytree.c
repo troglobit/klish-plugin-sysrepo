@@ -262,6 +262,7 @@ int main(int argc, char **argv)
 	}
 
 	faux_argv_parse(args, argv[1]);
+	faux_argv_del_continuable(args);
 	pline = pline_parse(ctx, args, 0);
 	faux_argv_free(args);
 	pline_debug(pline);

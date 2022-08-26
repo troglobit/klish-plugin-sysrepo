@@ -112,13 +112,25 @@ void pline_free(pline_t *pline)
 	faux_free(pline);
 }
 
+pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
+{
+	pexpr_t *pexpr = NULL;
+
+	assert(pline);
+
+	pexpr = pexpr_new();
+	if (xpath)
+		pexpr->xpath = faux_str_dup(xpath);
+	faux_list_add(pline->exprs, pexpr);
+}
+
 
 pexpr_t *pline_current_expr(pline_t *pline)
 {
 	assert(pline);
 
 	if (faux_list_len(pline->exprs) == 0)
-		faux_list_add(pline->exprs, pexpr_new());
+		pline_add_expr(pline, NULL);
 
 	return (pexpr_t *)faux_list_data(faux_list_tail(pline->exprs));
 }
@@ -255,21 +267,17 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 		} else if (node->nodetype & LYS_LEAF) {
 			struct lysc_node_leaf *leaf =
 				(struct lysc_node_leaf *)node;
-			pexpr_t *new = NULL;
 
 			if (leaf->type->basetype != LY_TYPE_EMPTY)
 				pexpr->value = faux_str_dup(str);
 			// Expression was completed
 			// So rollback (for oneliners)
 			node = node->parent;
-			new = pexpr_new();
-			new->xpath = faux_str_dup(rollback_xpath);
-			faux_list_add(pline->exprs, new);
+			pline_add_expr(pline, rollback_xpath);
 			rollback = BOOL_TRUE;
 
 		// Leaf-list
 		} else if (node->nodetype & LYS_LEAFLIST) {
-			pexpr_t *new = NULL;
 			char *tmp = NULL;
 
 			tmp = faux_str_sprintf("[.='%s']", str);
@@ -279,9 +287,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 			// Expression was completed
 			// So rollback (for oneliners)
 			node = node->parent;
-			new = pexpr_new();
-			new->xpath = faux_str_dup(rollback_xpath);
-			faux_list_add(pline->exprs, new);
+			pline_add_expr(pline, rollback_xpath);
 			rollback = BOOL_TRUE;
 		}
 
