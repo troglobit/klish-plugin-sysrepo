@@ -266,6 +266,7 @@ int main(int argc, char **argv)
 	pline = pline_parse(ctx, args, 0);
 	faux_argv_free(args);
 	pline_debug(pline);
+	pline_print_completions(pline);
 	pline_free(pline);
 
 //	ppath2path(ctx, "interfaces interface eth0 type");

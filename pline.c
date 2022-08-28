@@ -101,8 +101,6 @@ pline_t *pline_new(void)
 
 void pline_free(pline_t *pline)
 {
-	LY_ARRAY_COUNT_TYPE u = 0;
-
 	if (!pline)
 		return;
 
@@ -152,13 +150,19 @@ void pline_add_compl(pline_t *pline,
 }
 
 
-void pline_add_compl_subtree(pline_t *pline, const struct lysc_node *subtree)
+void pline_add_compl_subtree(pline_t *pline, const struct lys_module *module,
+	const struct lysc_node *node)
 {
+	const struct lysc_node *subtree = NULL;
 	const struct lysc_node *iter = NULL;
 
 	assert(pline);
-	if (!subtree)
-		return;
+	assert(module);
+
+	if (node)
+		subtree = lysc_node_child(node);
+	else
+		subtree = module->compiled->data;
 
 	LY_LIST_FOR(subtree, iter) {
 		if (!(iter->nodetype & NODETYPE_CONF))
@@ -243,6 +247,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 		pexpr_t *pexpr = pline_current_expr(pline);
 		const char *str = (const char *)faux_argv_current(arg);
 		bool_t is_rollback = rollback;
+		bool_t next_arg = BOOL_TRUE;
 
 		rollback = BOOL_FALSE;
 
@@ -273,8 +278,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 
 			// Completion
 			if (!str) {
-				pline_add_compl_subtree(pline,
-					module->compiled->data);
+				pline_add_compl_subtree(pline, module, node);
 				return BOOL_FALSE;
 			}
 
@@ -288,8 +292,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 
 			// Completion
 			if (!str) {
-				pline_add_compl_subtree(pline,
-					lysc_node_child(node));
+				pline_add_compl_subtree(pline, module, node);
 				break;
 			}
 
@@ -341,8 +344,7 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 
 			// Completion
 			if (!str) {
-				pline_add_compl_subtree(pline,
-					lysc_node_child(node));
+				pline_add_compl_subtree(pline, module, node);
 				break;
 			}
 
@@ -353,16 +355,26 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 		} else if (node->nodetype & LYS_LEAF) {
 			struct lysc_node_leaf *leaf =
 				(struct lysc_node_leaf *)node;
-
-			// Completion
-			if (!str) {
-				pline_add_compl(pline, PCOMPL_TYPE, node, NULL);
-				break;
-			}
-
+printf("node=%s, str=%s\n", node->name, str);
 			// Next element
-			if (leaf->type->basetype != LY_TYPE_EMPTY)
+			if (LY_TYPE_EMPTY == leaf->type->basetype) {
+				if (!str) {
+					pline_add_compl_subtree(pline,
+						module, node->parent);
+					break;
+				}
+				// Don't get next argument when argument is not
+				// really consumed
+				next_arg = BOOL_FALSE;
+			} else {
+				// Completion
+				if (!str) {
+					pline_add_compl(pline,
+						PCOMPL_TYPE, node, NULL);
+					break;
+				}
 				pexpr->value = faux_str_dup(str);
+			}
 			// Expression was completed
 			// So rollback (for oneliners)
 			node = node->parent;
@@ -391,8 +403,9 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 			rollback = BOOL_TRUE;
 		}
 
-		faux_argv_each(&arg);
-	} while (node);
+		if (next_arg)
+			faux_argv_each(&arg);
+	} while (node || rollback);
 
 	faux_str_free(rollback_xpath);
 
@@ -426,4 +439,105 @@ pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags
 	}
 
 	return pline;
+}
+
+
+static void identityref(struct lysc_ident *ident)
+{
+	LY_ARRAY_COUNT_TYPE u = 0;
+
+	if (!ident)
+		return;
+
+	if (!ident->derived) {
+		printf("%s\n", ident->name);
+		return;
+	}
+
+	LY_ARRAY_FOR(ident->derived, u) {
+		identityref(ident->derived[u]);
+	}
+}
+
+
+void pline_print_type_completions(const struct lysc_type *type)
+{
+	assert(type);
+
+	switch (type->basetype) {
+
+	case LY_TYPE_BOOL: {
+		printf("true\nfalse\n");
+		break;
+	}
+
+	case LY_TYPE_ENUM: {
+		const struct lysc_type_enum *t =
+			(const struct lysc_type_enum *)type;
+		LY_ARRAY_COUNT_TYPE u = 0;
+
+		LY_ARRAY_FOR(t->enums, u) {
+			printf("%s\n",t->enums[u].name);
+		}
+		break;
+	}
+
+	case LY_TYPE_IDENT: {
+		struct lysc_type_identityref *t =
+			(struct lysc_type_identityref *)type;
+		LY_ARRAY_COUNT_TYPE u = 0;
+
+		LY_ARRAY_FOR(t->bases, u) {
+			identityref(t->bases[u]);
+		}
+		break;
+	}
+
+	case LY_TYPE_UNION: {
+		struct lysc_type_union *t =
+			(struct lysc_type_union *)type;
+		LY_ARRAY_COUNT_TYPE u = 0;
+
+		LY_ARRAY_FOR(t->types, u) {
+			pline_print_type_completions(t->types[u]);
+		}
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+
+void pline_print_completions(const pline_t *pline)
+{
+	faux_list_node_t *iter = NULL;
+	pcompl_t *pcompl = NULL;
+
+	iter = faux_list_head(pline->compls);
+	while (pcompl = (pcompl_t *)faux_list_each(&iter)) {
+		struct lysc_type *type = NULL;
+		const struct lysc_node *node = pcompl->node;
+
+//		printf("pcompl.xpath = %s\n", pcompl->xpath ? pcompl->xpath : "NULL");
+
+		if (!node)
+			continue;
+
+		// Node
+		if (PCOMPL_NODE == pcompl->type) {
+			printf("%s\n", node->name);
+			continue;
+		}
+
+		// Type
+		if (node->nodetype & LYS_LEAF)
+			type = ((struct lysc_node_leaf *)node)->type;
+		else if (node->nodetype & LYS_LEAFLIST)
+			type = ((struct lysc_node_leaflist *)node)->type;
+		else
+			continue;
+		pline_print_type_completions(type);
+	}
 }

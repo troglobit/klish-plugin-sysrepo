@@ -2,18 +2,46 @@ module ttt {
   namespace "urn:ttt";
   prefix t;
 
+  leaf topleaf {
+    type string;
+  }
+
+  leaf topleaf2 {
+    type string;
+  }
+
+  leaf topempty {
+    type empty;
+  }
+
   container test {
-    list acl {
+    list iface {
       key "name";
+
       leaf name {
         type string;
       }
+
       leaf comment {
         type string;
       }
+
       leaf-list multi {
         type string;
       }
+
+      leaf type {
+        type enumeration {
+          enum ethernet;
+          enum ppp;
+          enum dummy;
+        }
+      }
+
+      leaf empty {
+        type empty;
+      }
+
     }
   }
 }
