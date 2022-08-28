@@ -233,6 +233,46 @@ static const struct lysc_node *find_child(const struct lysc_node *node,
 }
 
 
+static struct lysc_ident *find_ident(struct lysc_ident *ident, const char *name)
+{
+	LY_ARRAY_COUNT_TYPE u = 0;
+
+	if (!ident)
+		return NULL;
+
+	if (!ident->derived) {
+		if (!faux_str_cmp(name, ident->name))
+			return ident;
+		return NULL;
+	}
+
+	LY_ARRAY_FOR(ident->derived, u) {
+		struct lysc_ident *identity = find_ident(ident->derived[u], name);
+		if (identity)
+			return identity;
+	}
+
+	return NULL;
+}
+
+
+static const char *identityref_prefix(struct lysc_type_identityref *type,
+	const char *name)
+{
+	LY_ARRAY_COUNT_TYPE u = 0;
+
+	assert(type);
+
+	LY_ARRAY_FOR(type->bases, u) {
+		struct lysc_ident *identity = find_ident(type->bases[u], name);
+		if (identity)
+			return identity->module->name;
+	}
+
+	return NULL;
+}
+
+
 bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 	pline_t *pline)
 {
@@ -355,9 +395,10 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 		} else if (node->nodetype & LYS_LEAF) {
 			struct lysc_node_leaf *leaf =
 				(struct lysc_node_leaf *)node;
-printf("node=%s, str=%s\n", node->name, str);
+
 			// Next element
 			if (LY_TYPE_EMPTY == leaf->type->basetype) {
+				// Completion
 				if (!str) {
 					pline_add_compl_subtree(pline,
 						module, node->parent);
@@ -373,7 +414,17 @@ printf("node=%s, str=%s\n", node->name, str);
 						PCOMPL_TYPE, node, NULL);
 					break;
 				}
-				pexpr->value = faux_str_dup(str);
+				// Idenity must have prefix
+				if (LY_TYPE_IDENT == leaf->type->basetype) {
+					const char *prefix = NULL;
+					prefix = identityref_prefix(
+						(struct lysc_type_identityref *)
+						leaf->type, str);
+					if (prefix)
+						pexpr->value = faux_str_sprintf(
+							"%s:", prefix);
+				}
+				faux_str_cat(&pexpr->value, str);
 			}
 			// Expression was completed
 			// So rollback (for oneliners)
@@ -384,6 +435,9 @@ printf("node=%s, str=%s\n", node->name, str);
 		// Leaf-list
 		} else if (node->nodetype & LYS_LEAFLIST) {
 			char *tmp = NULL;
+			const char *prefix = NULL;
+			struct lysc_node_leaflist *leaflist =
+				(struct lysc_node_leaflist *)node;
 
 			// Completion
 			if (!str) {
@@ -392,7 +446,15 @@ printf("node=%s, str=%s\n", node->name, str);
 				break;
 			}
 
-			tmp = faux_str_sprintf("[.='%s']", str);
+			// Idenity must have prefix
+			if (LY_TYPE_IDENT == leaflist->type->basetype) {
+				prefix = identityref_prefix(
+					(struct lysc_type_identityref *)
+					leaflist->type, str);
+			}
+
+			tmp = faux_str_sprintf("[.='%s%s%s']",
+			prefix ? prefix : "", prefix ? ":" : "", str);
 			faux_str_cat(&pexpr->xpath, tmp);
 			faux_str_free(tmp);
 
