@@ -573,7 +573,101 @@ void pline_print_type_completions(const struct lysc_type *type)
 }
 
 
-void pline_print_completions(const pline_t *pline, sr_session_ctx_t *sess)
+void pline_print_type_help(const struct lysc_node *node,
+	const struct lysc_type *type)
+{
+	assert(type);
+
+	if (type->basetype != LY_TYPE_UNION)
+		printf("%s\n", node->name);
+
+	switch (type->basetype) {
+
+	case LY_TYPE_UINT8: {
+		printf("Unsigned integer 8bit\n");
+		break;
+	}
+
+	case LY_TYPE_UINT16: {
+		printf("Unsigned integer 16bit\n");
+		break;
+	}
+
+	case LY_TYPE_UINT32: {
+		printf("Unsigned integer 32bit\n");
+		break;
+	}
+
+	case LY_TYPE_UINT64: {
+		printf("Unsigned integer 64bit\n");
+		break;
+	}
+
+	case LY_TYPE_INT8: {
+		printf("Integer 8bit\n");
+		break;
+	}
+
+	case LY_TYPE_INT16: {
+		printf("Integer 16bit\n");
+		break;
+	}
+
+	case LY_TYPE_INT32: {
+		printf("Integer 32bit\n");
+		break;
+	}
+
+	case LY_TYPE_INT64: {
+		printf("Integer 64bit\n");
+		break;
+	}
+
+	case LY_TYPE_STRING: {
+		printf("String\n");
+		break;
+	}
+
+	case LY_TYPE_BOOL: {
+		printf("Boolean true/false\n");
+		break;
+	}
+
+	case LY_TYPE_DEC64: {
+		printf("Signed decimal number\n");
+		break;
+	}
+
+	case LY_TYPE_ENUM: {
+		printf("Enumerated choice\n");
+		break;
+	}
+
+	case LY_TYPE_IDENT: {
+		printf("Identity\n");
+		break;
+	}
+
+	case LY_TYPE_UNION: {
+		struct lysc_type_union *t =
+			(struct lysc_type_union *)type;
+		LY_ARRAY_COUNT_TYPE u = 0;
+
+		LY_ARRAY_FOR(t->types, u) {
+			pline_print_type_help(node, t->types[u]);
+		}
+		break;
+	}
+
+	default:
+		printf("Unknown\n");
+		break;
+	}
+}
+
+
+void pline_print_completions(const pline_t *pline,
+	sr_session_ctx_t *sess, bool_t help)
 {
 	faux_list_node_t *iter = NULL;
 	pcompl_t *pcompl = NULL;
@@ -583,7 +677,7 @@ void pline_print_completions(const pline_t *pline, sr_session_ctx_t *sess)
 		struct lysc_type *type = NULL;
 		const struct lysc_node *node = pcompl->node;
 
-		if (pcompl->xpath) {
+		if (pcompl->xpath && !help) {
 			sr_val_t *vals = NULL;
 			size_t val_num = 0;
 			size_t i = 0;
@@ -604,6 +698,16 @@ void pline_print_completions(const pline_t *pline, sr_session_ctx_t *sess)
 		// Node
 		if (PCOMPL_NODE == pcompl->type) {
 			printf("%s\n", node->name);
+			if (help) {
+				if (!node->dsc) {
+					printf("%s\n", node->name);
+				} else {
+					char *dsc = faux_str_getline(node->dsc,
+						NULL);
+					printf("%s\n", dsc);
+					faux_str_free(dsc);
+				}
+			}
 			continue;
 		}
 
@@ -614,6 +718,9 @@ void pline_print_completions(const pline_t *pline, sr_session_ctx_t *sess)
 			type = ((struct lysc_node_leaflist *)node)->type;
 		else
 			continue;
-		pline_print_type_completions(type);
+		if (help)
+			pline_print_type_help(node, type);
+		else
+			pline_print_type_completions(type);
 	}
 }
