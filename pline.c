@@ -9,6 +9,7 @@
 
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
+#include <sysrepo/values.h>
 #include <libyang/tree_edit.h>
 
 #include <faux/faux.h>
@@ -572,7 +573,7 @@ void pline_print_type_completions(const struct lysc_type *type)
 }
 
 
-void pline_print_completions(const pline_t *pline)
+void pline_print_completions(const pline_t *pline, sr_session_ctx_t *sess)
 {
 	faux_list_node_t *iter = NULL;
 	pcompl_t *pcompl = NULL;
@@ -582,7 +583,20 @@ void pline_print_completions(const pline_t *pline)
 		struct lysc_type *type = NULL;
 		const struct lysc_node *node = pcompl->node;
 
-//		printf("pcompl.xpath = %s\n", pcompl->xpath ? pcompl->xpath : "NULL");
+		if (pcompl->xpath) {
+			sr_val_t *vals = NULL;
+			size_t val_num = 0;
+			size_t i = 0;
+
+			sr_get_items(sess, pcompl->xpath, 0, 0, &vals, &val_num);
+			for (i = 0; i < val_num; i++) {
+				char *tmp = sr_val_to_str(&vals[i]);
+				if (!tmp)
+					continue;
+				printf("%s\n", tmp);
+				free(tmp);
+			}
+		}
 
 		if (!node)
 			continue;
