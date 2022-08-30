@@ -22,7 +22,7 @@
 #define NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
 
 
-pexpr_t *pexpr_new(void)
+static pexpr_t *pexpr_new(void)
 {
 	pexpr_t *pexpr = NULL;
 
@@ -40,7 +40,7 @@ pexpr_t *pexpr_new(void)
 }
 
 
-void pexpr_free(pexpr_t *pexpr)
+static void pexpr_free(pexpr_t *pexpr)
 {
 	if (!pexpr)
 		return;
@@ -52,7 +52,7 @@ void pexpr_free(pexpr_t *pexpr)
 }
 
 
-pcompl_t *pcompl_new(void)
+static pcompl_t *pcompl_new(void)
 {
 	pcompl_t *pcompl = NULL;
 
@@ -70,7 +70,7 @@ pcompl_t *pcompl_new(void)
 }
 
 
-void pcompl_free(pcompl_t *pcompl)
+static void pcompl_free(pcompl_t *pcompl)
 {
 	if (!pcompl)
 		return;
@@ -81,7 +81,7 @@ void pcompl_free(pcompl_t *pcompl)
 }
 
 
-pline_t *pline_new(void)
+pline_t *pline_new(sr_session_ctx_t *sess)
 {
 	pline_t *pline = NULL;
 
@@ -91,6 +91,7 @@ pline_t *pline_new(void)
 		return NULL;
 
 	// Init
+	pline->sess = sess;
 	pline->exprs = faux_list_new(FAUX_LIST_UNSORTED, FAUX_LIST_NONUNIQUE,
 		NULL, NULL, (faux_list_free_fn)pexpr_free);
 	pline->compls = faux_list_new(FAUX_LIST_UNSORTED, FAUX_LIST_NONUNIQUE,
@@ -111,7 +112,7 @@ void pline_free(pline_t *pline)
 	faux_free(pline);
 }
 
-pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
+static pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
 {
 	pexpr_t *pexpr = NULL;
 
@@ -124,7 +125,7 @@ pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
 }
 
 
-pexpr_t *pline_current_expr(pline_t *pline)
+static pexpr_t *pline_current_expr(pline_t *pline)
 {
 	assert(pline);
 
@@ -135,7 +136,7 @@ pexpr_t *pline_current_expr(pline_t *pline)
 }
 
 
-void pline_add_compl(pline_t *pline,
+static void pline_add_compl(pline_t *pline,
 	pcompl_type_e type, const struct lysc_node *node, char *xpath)
 {
 	pcompl_t *pcompl = NULL;
@@ -151,7 +152,7 @@ void pline_add_compl(pline_t *pline,
 }
 
 
-void pline_add_compl_subtree(pline_t *pline, const struct lys_module *module,
+static void pline_add_compl_subtree(pline_t *pline, const struct lys_module *module,
 	const struct lysc_node *node)
 {
 	const struct lysc_node *subtree = NULL;
@@ -204,11 +205,9 @@ void pline_debug(pline_t *pline)
 }
 
 
-static int
-sr_ly_module_is_internal(const struct lys_module *ly_mod);
+int sr_ly_module_is_internal(const struct lys_module *ly_mod);
 
-int
-sr_module_is_internal(const struct lys_module *ly_mod);
+int sr_module_is_internal(const struct lys_module *ly_mod);
 
 
 // Don't use standard lys_find_child() because it checks given module to be
@@ -274,7 +273,7 @@ static const char *identityref_prefix(struct lysc_type_identityref *type,
 }
 
 
-bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
+static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 	pline_t *pline)
 {
 	faux_argv_node_t *arg = faux_argv_iter(argv);
@@ -476,13 +475,21 @@ bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 }
 
 
-pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags)
+pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 {
+	const struct ly_ctx *ctx = NULL;
 	struct lys_module *module = NULL;
-	pline_t *pline = pline_new();
+	pline_t *pline = NULL;
 	uint32_t i = 0;
 
-	assert(ctx);
+	assert(sess);
+	if (!sess)
+		return NULL;
+
+	pline = pline_new(sess);
+	if (!pline)
+		return NULL;
+	ctx = sr_session_acquire_context(pline->sess);
 	if (!ctx)
 		return NULL;
 
@@ -500,6 +507,8 @@ pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags
 		if (pline_parse_module(module, argv, pline))
 			break; // Found
 	}
+
+	sr_session_release_context(pline->sess);
 
 	return pline;
 }
@@ -523,7 +532,7 @@ static void identityref(struct lysc_ident *ident)
 }
 
 
-void pline_print_type_completions(const struct lysc_type *type)
+static void pline_print_type_completions(const struct lysc_type *type)
 {
 	assert(type);
 
@@ -573,7 +582,7 @@ void pline_print_type_completions(const struct lysc_type *type)
 }
 
 
-void pline_print_type_help(const struct lysc_node *node,
+static void pline_print_type_help(const struct lysc_node *node,
 	const struct lysc_type *type)
 {
 	assert(type);
@@ -666,8 +675,7 @@ void pline_print_type_help(const struct lysc_node *node,
 }
 
 
-void pline_print_completions(const pline_t *pline,
-	sr_session_ctx_t *sess, bool_t help)
+void pline_print_completions(const pline_t *pline, bool_t help)
 {
 	faux_list_node_t *iter = NULL;
 	pcompl_t *pcompl = NULL;
@@ -682,7 +690,8 @@ void pline_print_completions(const pline_t *pline,
 			size_t val_num = 0;
 			size_t i = 0;
 
-			sr_get_items(sess, pcompl->xpath, 0, 0, &vals, &val_num);
+			sr_get_items(pline->sess, pcompl->xpath,
+				0, 0, &vals, &val_num);
 			for (i = 0; i < val_num; i++) {
 				char *tmp = sr_val_to_str(&vals[i]);
 				if (!tmp)

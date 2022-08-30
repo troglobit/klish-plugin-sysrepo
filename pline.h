@@ -8,6 +8,7 @@
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
+
 // Plain EXPRession
 typedef struct {
 	char *xpath;
@@ -33,36 +34,21 @@ typedef struct {
 
 // Plain LINE
 typedef struct pline_s {
+	sr_session_ctx_t *sess;
 	faux_list_t *exprs;
 	faux_list_t *compls;
 } pline_t;
 
+
 C_DECL_BEGIN
 
+pline_t *pline_new(sr_session_ctx_t *sess);
+pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags);
 
-pline_t *pline_new(void);
 void pline_free(pline_t *pline);
-pline_t *pline_parse(const struct ly_ctx *ctx, faux_argv_t *argv, uint32_t flags);
-pexpr_t *pline_current_expr(pline_t *pline);
+
 void pline_debug(pline_t *pline);
-void pline_print_completions(const pline_t *pline,
-	sr_session_ctx_t *sess, bool_t help);
-
-//void pline_set_quotes(pline_t *fargv, const char *quotes);
-
-//ssize_t pline_len(const pline_t *fargv);
-//pline_node_t *pline_iter(const pline_t *fargv);
-//const char *pline_each(pline_node_t **iter);
-//const char *pline_current(pline_node_t *iter);
-//const char *pline_index(const pline_t *fargv, size_t index);
-
-//ssize_t pline_parse(pline_t *fargv, const char *str);
-//bool_t pline_add(pline_t *fargv, const char *arg);
-
-//bool_t pline_is_continuable(const pline_t *fargv);
-//void pline_set_continuable(pline_t *fargv, bool_t continuable);
-
-//bool_t pline_is_last(pline_node_t *iter);
+void pline_print_completions(const pline_t *pline, bool_t help);
 
 C_DECL_END
 

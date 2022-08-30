@@ -12,21 +12,6 @@
 
 #include "pline.h"
 
-#define NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
-
-
-struct ipath {
-	struct ly_path *path_arr;
-	const char *value;
-};
-
-
-
-static void process_node(const struct lysc_node *node, size_t level);
-static void iterate_nodes(const struct lysc_node *node, size_t level);
-
-
-
 
 static int
 sr_ly_module_is_internal(const struct lys_module *ly_mod)
@@ -87,153 +72,6 @@ sr_module_is_internal(const struct lys_module *ly_mod)
     return 0;
 }
 
-static void identityref(struct lysc_ident *ident)
-{
-	LY_ARRAY_COUNT_TYPE u = 0;
-
-	if (!ident)
-		return;
-
-	if (!ident->derived) {
-		printf(" %s", ident->name);
-		return;
-	}
-
-	LY_ARRAY_FOR(ident->derived, u) {
-		identityref(ident->derived[u]);
-	}
-
-}
-
-static void process_node(const struct lysc_node *node, size_t level)
-{
-	if (!node)
-		return;
-
-	printf("%*c %s:%s [%s]",
-		(int)(level * 2), ' ',
-		node->module->name,
-		node->name,
-		lys_nodetype2str(node->nodetype));
-
-	if (node->nodetype & LYS_LIST) {
-		const struct lysc_node *iter = NULL;
-		LY_LIST_FOR(lysc_node_child(node), iter) {
-			if (lysc_is_key(iter))
-				printf(" %s", iter->name);
-		}
-
-	} else if (node->nodetype & LYS_LEAF) {
-		const struct lysc_node_leaf *leaf =
-			(const struct lysc_node_leaf *)node;
-		const struct lysc_type *type = leaf->type;
-		if (type->basetype == LY_TYPE_IDENT) {
-			struct lysc_type_identityref *iref =
-				(struct lysc_type_identityref *)type;
-			LY_ARRAY_COUNT_TYPE u = 0;
-			LY_ARRAY_FOR(iref->bases, u) {
-				identityref(iref->bases[u]);
-			}
-		}
-	}
-
-
-	printf("\n");
-	iterate_nodes(lysc_node_child(node), level + 1);
-}
-
-
-static void iterate_nodes(const struct lysc_node *node, size_t level)
-{
-	const struct lysc_node *iter = NULL;
-
-	if (!node)
-		return;
-
-	LY_LIST_FOR(node, iter) {
-		if (!(iter->nodetype & (
-			LYS_CONTAINER |
-			LYS_LIST |
-			LYS_LEAF |
-			LYS_LEAFLIST
-			)))
-			continue;
-		if (!(iter->flags & LYS_CONFIG_W))
-			continue;
-		process_node(iter, level);
-	}
-}
-
-
-void show(const struct ly_ctx *ctx)
-{
-	struct lys_module *module = NULL;
-	uint32_t i = 0;
-
-	// Iterate all modules
-	i = 0;
-	while ((module = ly_ctx_get_module_iter(ctx, &i))) {
-		if (sr_module_is_internal(module))
-			continue;
-		if (!module->compiled)
-			continue;
-		if (!module->implemented)
-			continue;
-		if (!module->compiled->data)
-			continue;
-		printf("%s\n", module->name);
-		iterate_nodes(module->compiled->data, 1);
-	}
-
-}
-
-
-const struct lysc_node *ppath2path_node(const struct lys_module *module,
-	const struct lysc_node *parent, const faux_argv_t *argv)
-{
-	const struct lysc_node *node = NULL;
-	const char *search = faux_argv_index(argv, 0);
-
-	printf("searching for %s\n", search);
-
-	node = lys_find_child(node, module, search, 0,
-		NODETYPE_CONF, 0);
-
-	if (node)
-		printf("%s\n", search);
-
-	return node;
-}
-
-
-void ppath2path(const struct ly_ctx *ctx, const char *ppath)
-{
-	faux_argv_t *argv = NULL;
-	struct lys_module *module = NULL;
-	uint32_t i = 0;
-
-	argv = faux_argv_new();
-	faux_argv_parse(argv, ppath);
-
-	// Iterate all modules
-	i = 0;
-	while ((module = ly_ctx_get_module_iter(ctx, &i))) {
-		if (sr_module_is_internal(module))
-			continue;
-		if (!module->compiled)
-			continue;
-		if (!module->implemented)
-			continue;
-		if (!module->compiled->data)
-			continue;
-		printf("Module %s\n", module->name);
-		if (ppath2path_node(module, NULL, argv)) {
-			printf("Found\n");
-		}
-	}
-
-}
-
 
 int main(int argc, char **argv)
 {
@@ -241,7 +79,6 @@ int main(int argc, char **argv)
 	int err = SR_ERR_OK;
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
-	const struct ly_ctx *ctx = NULL;
 	faux_argv_t *args = faux_argv_new();
 	pline_t *pline = NULL;
 
@@ -255,27 +92,17 @@ int main(int argc, char **argv)
 		printf("Error2\n");
 		goto out;
 	}
-	ctx = sr_acquire_context(conn);
-	if (!ctx) {
-		printf("Cannot acquire context\n");
-		goto out;
-	}
 
 	faux_argv_parse(args, argv[1]);
 	faux_argv_del_continuable(args);
-	pline = pline_parse(ctx, args, 0);
+	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
-	pline_debug(pline);
-	pline_print_completions(pline, sess, BOOL_TRUE);
+//	pline_debug(pline);
+	pline_print_completions(pline, BOOL_TRUE);
 	pline_free(pline);
-
-//	ppath2path(ctx, "interfaces interface eth0 type");
-
-//	show(ctx);
 
 	ret = 0;
 out:
-	sr_release_context(conn);
 	sr_disconnect(conn);
 
 	return 0;
