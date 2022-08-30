@@ -9,8 +9,9 @@ kplugin_sysrepo_la_CFLAGS = $(AM_LDFLAGS)
 #kplugin_sysrepo_la_LIBADD = libsysrepo.la
 
 kplugin_sysrepo_la_SOURCES += \
-	src/private.h \
 	src/plugin.c \
+	src/syms.h \
+	src/syms.c \
 	src/sr_copypaste.h \
 	src/sr_copypaste.c \
 	src/pline.h \
