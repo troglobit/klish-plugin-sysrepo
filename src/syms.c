@@ -21,19 +21,18 @@
 #include "pline.h"
 
 
-int srp_compl(kcontext_t *context)
+static faux_argv_t *pargv2argv(const kpargv_t *pargv)
 {
-	const kpargv_t *pargv = NULL;
 	const kentry_t *candidate = NULL;
 	faux_list_node_t *iter = NULL;
 	faux_list_t *pargs = NULL;
-	faux_argv_t *args = faux_argv_new();
-	pline_t *pline = NULL;
+	faux_argv_t *args = NULL;
 
-	pargv = kcontext_parent_pargv(context);
+	assert(pargv);
+	if (!pargv)
+		return NULL;
 	pargs = kpargv_pargs(pargv);
 	candidate = kparg_entry(kpargv_candidate_parg(pargv));
-	sr_session_ctx_t *sess = NULL;
 
 	iter = faux_list_tail(pargs);
 	do {
@@ -48,6 +47,7 @@ int srp_compl(kcontext_t *context)
 		iter = prev;
 	} while (iter);
 
+	args = faux_argv_new();
 	while (iter) {
 		kparg_t *parg = (kparg_t *)faux_list_data(iter);
 		faux_argv_add(args, kparg_value(parg));
@@ -56,7 +56,18 @@ int srp_compl(kcontext_t *context)
 
 	faux_argv_set_continuable(args, kpargv_continuable(pargv));
 
+	return args;
+}
 
+
+int srp_compl(kcontext_t *context)
+{
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_session_ctx_t *sess = NULL;
+
+	assert(context);
+	args = pargv2argv(kcontext_parent_pargv(context));
 	sess = (sr_session_ctx_t *)kplugin_udata(kcontext_plugin(context));
 
 	faux_argv_del_continuable(args);
