@@ -6,7 +6,7 @@
 #include <sysrepo/xpath.h>
 
 
-static int
+int
 sr_ly_module_is_internal(const struct lys_module *ly_mod);
 
 int

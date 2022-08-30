@@ -1,3 +1,6 @@
+plugindir = ${pkglibdir}/@PLUGINS_SUBDIR@
+plugin_LTLIBRARIES =
+
 plugin_LTLIBRARIES += kplugin-sysrepo.la
 kplugin_sysrepo_la_SOURCES =
 kplugin_sysrepo_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version -module

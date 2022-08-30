@@ -42,5 +42,5 @@ int main(int argc, char **argv)
 out:
 	sr_disconnect(conn);
 
-	return 0;
+	return ret;
 }

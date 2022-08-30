@@ -123,6 +123,8 @@ static pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
 	if (xpath)
 		pexpr->xpath = faux_str_dup(xpath);
 	faux_list_add(pline->exprs, pexpr);
+
+	return pexpr;
 }
 
 
@@ -186,7 +188,7 @@ void pline_debug(pline_t *pline)
 	printf("=== Expressions:\n\n");
 
 	iter = faux_list_head(pline->exprs);
-	while (pexpr = (pexpr_t *)faux_list_each(&iter)) {
+	while ((pexpr = (pexpr_t *)faux_list_each(&iter))) {
 		printf("pexpr.xpath = %s\n", pexpr->xpath ? pexpr->xpath : "NULL");
 		printf("pexpr.value = %s\n", pexpr->value ? pexpr->value : "NULL");
 		printf("pexpr.active = %s\n", pexpr->active ? "true" : "false");
@@ -196,7 +198,7 @@ void pline_debug(pline_t *pline)
 	printf("=== Completions:\n\n");
 
 	iter = faux_list_head(pline->compls);
-	while (pcompl = (pcompl_t *)faux_list_each(&iter)) {
+	while ((pcompl = (pcompl_t *)faux_list_each(&iter))) {
 		printf("pcompl.type = %s\n", (pcompl->type == PCOMPL_NODE) ?
 			"PCOMPL_NODE" : "PCOMPL_TYPE");
 		printf("pcompl.node = %s\n", pcompl->node ? pcompl->node->name : "NULL");
@@ -677,7 +679,7 @@ void pline_print_completions(const pline_t *pline, bool_t help)
 	pcompl_t *pcompl = NULL;
 
 	iter = faux_list_head(pline->compls);
-	while (pcompl = (pcompl_t *)faux_list_each(&iter)) {
+	while ((pcompl = (pcompl_t *)faux_list_each(&iter))) {
 		struct lysc_type *type = NULL;
 		const struct lysc_node *node = pcompl->node;
 
