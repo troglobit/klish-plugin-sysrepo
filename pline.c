@@ -17,6 +17,7 @@
 #include <faux/list.h>
 #include <faux/argv.h>
 
+#include "sr_copypaste.h"
 #include "pline.h"
 
 #define NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
@@ -203,11 +204,6 @@ void pline_debug(pline_t *pline)
 		printf("\n");
 	}
 }
-
-
-int sr_ly_module_is_internal(const struct lys_module *ly_mod);
-
-int sr_module_is_internal(const struct lys_module *ly_mod);
 
 
 // Don't use standard lys_find_child() because it checks given module to be
