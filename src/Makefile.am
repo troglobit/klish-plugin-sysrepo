@@ -1,4 +1,4 @@
-plugindir = ${pkglibdir}/@PLUGINS_SUBDIR@
+plugindir = ${libdir}/@PLUGINS_SUBDIR@
 plugin_LTLIBRARIES =
 
 plugin_LTLIBRARIES += kplugin-sysrepo.la

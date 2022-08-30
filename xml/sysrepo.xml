@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KLISH
+	xmlns="http://clish.sourceforge.net/XMLSchema"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://clish.sourceforge.net/XMLSchema http://clish.sourceforge.net/XMLSchema/clish.xsd">
+
+<PLUGIN name="sysrepo"/>
+
+
+<ENTRY name="PLINE" purpose="ptype">
+	<ENTRY name="completion" purpose="completion">
+		<ACTION sym="srp_compl@sysrepo"/>
+	</ENTRY>
+<!--	<ENTRY name="help" purpose="help">
+		<ACTION sym="completion_COMMAND"/>
+	</ENTRY>
+-->	<ACTION sym="STRING"/>
+</ENTRY>
+
+
+<ENTRY name="sysrepo" mode="switch" container="true">
+
+<!--
+<ENTRY name="exit" help="Exit view">
+	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+	<ACTION sym="nav">pop</ACTION>
+	<ACTION sym="print">Exiting klish session</ACTION>
+</ENTRY>
+-->
+
+<ENTRY name="set" help="Clear settings" mode="sequence">
+	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+	<ENTRY name="path" help="Clear settings" max="100">
+		<ENTRY name="PLINE" purpose="ptype" ref="/PLINE"/>
+	</ENTRY>
+	<ACTION sym="print">test</ACTION>
+</ENTRY>
+
+</ENTRY>
+
+</KLISH>

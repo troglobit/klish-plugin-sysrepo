@@ -80,7 +80,7 @@ AM_CONDITIONAL(DEBUG,test x$enable_debug = xyes)
 ################################
 # Variables to install plugins
 ################################
-PLUGINS_SUBDIR=plugins
+PLUGINS_SUBDIR=klish/plugins
 AC_SUBST(PLUGINS_SUBDIR)
 
 

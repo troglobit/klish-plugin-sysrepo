@@ -73,10 +73,8 @@ int srp_compl(kcontext_t *context)
 	faux_argv_del_continuable(args);
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
-	pline_print_completions(pline, BOOL_TRUE);
+	pline_print_completions(pline, BOOL_FALSE);
 	pline_free(pline);
-
-	faux_argv_free(args);
 
 	return 0;
 }
