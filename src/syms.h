@@ -12,6 +12,7 @@
 C_DECL_BEGIN
 
 int srp_compl(kcontext_t *context);
+int srp_set(kcontext_t *context);
 
 C_DECL_END
 

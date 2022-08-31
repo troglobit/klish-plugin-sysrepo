@@ -34,6 +34,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 
 	// Symbols
 	kplugin_add_syms(plugin, ksym_new("srp_compl", srp_compl));
+	kplugin_add_syms(plugin, ksym_new("srp_set", srp_set));
 
 	return 0;
 }
