@@ -76,9 +76,7 @@ static faux_argv_t *param2argv(const kpargv_t *pargv, const char *entry_name)
 	args = faux_argv_new();
 
 	iter = faux_list_head(pargs);
-syslog(LOG_DEBUG, "=======\n");
 	while ((parg = (kparg_t *)faux_list_each(&iter))) {
-syslog(LOG_DEBUG, "Val = %s\n", kparg_value(parg));
 		faux_argv_add(args, kparg_value(parg));
 	}
 	faux_list_free(pargs);
@@ -108,7 +106,6 @@ int srp_compl(kcontext_t *context)
 	}
 
 	entry_name = kentry_name(kcontext_candidate_entry(context));
-syslog(LOG_DEBUG, "Entry name = %s\n", entry_name);
 	args = param2argv(kcontext_parent_pargv(context), entry_name);
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
