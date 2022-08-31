@@ -7,15 +7,15 @@
 #include <string.h>
 #include <assert.h>
 
-#include <sysrepo.h>
-#include <sysrepo/xpath.h>
-#include <sysrepo/values.h>
-#include <libyang/tree_edit.h>
-
 #include <faux/faux.h>
 #include <faux/str.h>
 #include <faux/list.h>
 #include <faux/argv.h>
+
+#include <sysrepo.h>
+#include <sysrepo/xpath.h>
+#include <sysrepo/values.h>
+#include <libyang/tree_edit.h>
 
 #include "sr_copypaste.h"
 #include "pline.h"

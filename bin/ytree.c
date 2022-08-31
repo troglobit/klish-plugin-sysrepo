@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <sysrepo.h>
-#include <sysrepo/xpath.h>
-
 #include <faux/faux.h>
 #include <faux/argv.h>
+
+#include <sysrepo.h>
+#include <sysrepo/xpath.h>
 
 #include "pline.h"
 

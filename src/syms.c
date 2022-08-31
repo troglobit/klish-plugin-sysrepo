@@ -2,13 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-
-#include <sysrepo.h>
-#include <sysrepo/xpath.h>
+#include <syslog.h>
 
 #include <faux/faux.h>
-#include <faux/argv.h>
 #include <faux/str.h>
+#include <faux/argv.h>
 #include <faux/list.h>
 #include <faux/error.h>
 #include <klish/khelper.h>
@@ -17,6 +15,9 @@
 #include <klish/kscheme.h>
 #include <klish/kcontext.h>
 #include <klish/kpargv.h>
+
+#include <sysrepo.h>
+#include <sysrepo/xpath.h>
 
 #include "pline.h"
 
@@ -35,17 +36,17 @@ static faux_argv_t *pargv2argv(const kpargv_t *pargv)
 	candidate = kparg_entry(kpargv_candidate_parg(pargv));
 
 	iter = faux_list_tail(pargs);
-	do {
+	while (iter) {
 		faux_list_node_t *prev = faux_list_prev_node(iter);
-		if (prev) {
-			kparg_t *parg = (kparg_t *)faux_list_data(prev);
-			if (kparg_entry(parg) != candidate)
+		kparg_t *parg = (kparg_t *)faux_list_data(iter);
+		if (kparg_entry(parg) != candidate) {
+				iter = faux_list_next_node(iter);
 				break;
-		} else {
-			break;
 		}
+		if (!prev)
+			break;
 		iter = prev;
-	} while (iter);
+	}
 
 	args = faux_argv_new();
 	while (iter) {
@@ -59,7 +60,9 @@ static faux_argv_t *pargv2argv(const kpargv_t *pargv)
 	return args;
 }
 
-
+// Candidate from pargv contains possible begin of current word (that must be
+// completed). kpargv's list don't contain candidate but only already parsed
+// words.
 int srp_compl(kcontext_t *context)
 {
 	faux_argv_t *args = NULL;
@@ -70,7 +73,6 @@ int srp_compl(kcontext_t *context)
 	args = pargv2argv(kcontext_parent_pargv(context));
 	sess = (sr_session_ctx_t *)kplugin_udata(kcontext_plugin(context));
 
-	faux_argv_del_continuable(args);
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
 	pline_print_completions(pline, BOOL_FALSE);

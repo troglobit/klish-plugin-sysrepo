@@ -5,6 +5,9 @@
 #ifndef _pline_h
 #define _pline_h
 
+#include <faux/list.h>
+#include <faux/argv.h>
+
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
