@@ -33,7 +33,7 @@
 	<ENTRY name="path" help="Clear settings" max="100">
 		<ENTRY name="PLINE" purpose="ptype" ref="/PLINE"/>
 	</ENTRY>
-	<ACTION sym="print">test</ACTION>
+	<ACTION sym="srp_set@sysrepo"/>
 </ENTRY>
 
 </ENTRY>

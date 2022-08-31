@@ -22,45 +22,6 @@
 #include "pline.h"
 
 
-static faux_argv_t *pargv2argv(const kpargv_t *pargv)
-{
-	const kentry_t *candidate = NULL;
-	faux_list_node_t *iter = NULL;
-	faux_list_t *pargs = NULL;
-	faux_argv_t *args = NULL;
-
-	assert(pargv);
-	if (!pargv)
-		return NULL;
-	pargs = kpargv_pargs(pargv);
-	candidate = kparg_entry(kpargv_candidate_parg(pargv));
-
-	iter = faux_list_tail(pargs);
-	while (iter) {
-		faux_list_node_t *prev = faux_list_prev_node(iter);
-		kparg_t *parg = (kparg_t *)faux_list_data(iter);
-		if (kparg_entry(parg) != candidate) {
-				iter = faux_list_next_node(iter);
-				break;
-		}
-		if (!prev)
-			break;
-		iter = prev;
-	}
-
-	args = faux_argv_new();
-	while (iter) {
-		kparg_t *parg = (kparg_t *)faux_list_data(iter);
-		faux_argv_add(args, kparg_value(parg));
-		iter = faux_list_next_node(iter);
-	}
-
-	faux_argv_set_continuable(args, kpargv_continuable(pargv));
-
-	return args;
-}
-
-
 static faux_argv_t *param2argv(const kpargv_t *pargv, const char *entry_name)
 {
 	faux_list_node_t *iter = NULL;
@@ -127,7 +88,7 @@ int srp_set(kcontext_t *context)
 	faux_list_node_t *iter = NULL;
 	pexpr_t *expr = NULL;
 	size_t err_num = 0;
-return 0;
+
 	assert(context);
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
@@ -137,7 +98,7 @@ return 0;
 		return -1;
 	}
 
-	args = pargv2argv(kcontext_pargv(context));
+	args = param2argv(kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
 
