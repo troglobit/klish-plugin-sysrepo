@@ -60,6 +60,9 @@ static faux_argv_t *pargv2argv(const kpargv_t *pargv)
 	return args;
 }
 
+
+
+
 // Candidate from pargv contains possible begin of current word (that must be
 // completed). kpargv's list don't contain candidate but only already parsed
 // words.
@@ -67,16 +70,25 @@ int srp_compl(kcontext_t *context)
 {
 	faux_argv_t *args = NULL;
 	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
 
 	assert(context);
-	args = pargv2argv(kcontext_parent_pargv(context));
-	sess = (sr_session_ctx_t *)kplugin_udata(kcontext_plugin(context));
 
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	args = pargv2argv(kcontext_parent_pargv(context));
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
 	pline_print_completions(pline, BOOL_FALSE);
 	pline_free(pline);
+
+	sr_disconnect(conn);
 
 	return 0;
 }
