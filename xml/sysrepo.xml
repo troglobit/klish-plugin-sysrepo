@@ -11,10 +11,10 @@
 	<ENTRY name="completion" purpose="completion">
 		<ACTION sym="srp_compl@sysrepo"/>
 	</ENTRY>
-<!--	<ENTRY name="help" purpose="help">
-		<ACTION sym="completion_COMMAND"/>
+	<ENTRY name="help" purpose="help">
+		<ACTION sym="srp_help@sysrepo"/>
 	</ENTRY>
--->	<ACTION sym="STRING"/>
+	<ACTION sym="STRING"/>
 </ENTRY>
 
 
@@ -30,7 +30,7 @@
 
 <ENTRY name="set" help="Clear settings" mode="sequence">
 	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-	<ENTRY name="path" help="Clear settings" max="100">
+	<ENTRY name="path" max="100">
 		<ENTRY name="PLINE" purpose="ptype" ref="/PLINE"/>
 	</ENTRY>
 	<ACTION sym="srp_set@sysrepo"/>
