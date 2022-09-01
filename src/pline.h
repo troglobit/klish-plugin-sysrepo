@@ -11,6 +11,44 @@
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
+// Type of positional pline argument
+// P(line) A(rg) T(ype)
+typedef enum {
+	PAT_NONE			= 0x0001,
+	PAT_CONTAINER			= 0x0002,
+	PAT_LIST			= 0x0004,
+	PAT_LIST_KEY			= 0x0008,
+	PAT_LIST_KEY_INCOMPLETED	= 0x0010,
+	PAT_LEAF			= 0x0020,
+	PAT_LEAF_VALUE			= 0x0040,
+	PAT_LEAFLIST			= 0x0080,
+	PAT_LEAFLIST_VALUE		= 0x0100,
+} pat_e;
+
+
+// Type of pline expression
+// P(line) T(ype)
+typedef enum {
+
+	PT_SET =
+		PAT_CONTAINER |
+		PAT_LIST_KEY |
+		PAT_LEAF_VALUE |
+		PAT_LEAFLIST_VALUE,
+
+	PT_DEL =
+		PAT_CONTAINER |
+		PAT_LIST_KEY |
+		PAT_LEAF |
+		PAT_LEAFLIST |
+		PAT_LEAFLIST_VALUE,
+
+	PT_EDIT =
+		PAT_CONTAINER |
+		PAT_LIST_KEY,
+
+} pt_e;
+
 
 // Plain EXPRession
 typedef struct {
