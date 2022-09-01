@@ -55,6 +55,7 @@ typedef struct {
 	char *xpath;
 	char *value;
 	bool_t active;
+	pat_e pat;
 } pexpr_t;
 
 

@@ -36,6 +36,7 @@ static pexpr_t *pexpr_new(void)
 	pexpr->xpath = NULL;
 	pexpr->value = NULL;
 	pexpr->active = BOOL_FALSE;
+	pexpr->pat = PAT_NONE;
 
 	return pexpr;
 }
