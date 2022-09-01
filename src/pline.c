@@ -190,9 +190,46 @@ void pline_debug(pline_t *pline)
 
 	iter = faux_list_head(pline->exprs);
 	while ((pexpr = (pexpr_t *)faux_list_each(&iter))) {
+		char *pat = NULL;
 		printf("pexpr.xpath = %s\n", pexpr->xpath ? pexpr->xpath : "NULL");
 		printf("pexpr.value = %s\n", pexpr->value ? pexpr->value : "NULL");
 		printf("pexpr.active = %s\n", pexpr->active ? "true" : "false");
+		switch (pexpr->pat) {
+		case 0x0001:
+			pat = "NONE";
+			break;
+		case 0x0002:
+			pat = "CONTAINER";
+			break;
+		case 0x0004:
+			pat = "LIST";
+			break;
+		case 0x0008:
+			pat = "LIST_KEY";
+			break;
+		case 0x0010:
+			pat = "LIST_KEY_INCOMPLETED";
+			break;
+		case 0x0020:
+			pat = "LEAF";
+			break;
+		case 0x0040:
+			pat = "LEAF_VALUE";
+			break;
+		case 0x0080:
+			pat = "LEAF_EMPTY";
+			break;
+		case 0x0100:
+			pat = "LEAFLIST";
+			break;
+		case 0x0200:
+			pat = "LEAFLIST_VALUE";
+			break;
+		default:
+			pat = "UNKNOWN";
+			break;
+		}
+		printf("pexpr.pat = %s\n", pat);
 		printf("\n");
 	}
 
@@ -329,6 +366,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 		// Container
 		} else if (node->nodetype & LYS_CONTAINER) {
 
+			pexpr->pat = PAT_CONTAINER;
+
 			// Completion
 			if (!str) {
 				pline_add_compl_subtree(pline, module, node);
@@ -341,6 +380,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 		// List
 		} else if (node->nodetype & LYS_LIST) {
 			const struct lysc_node *iter = NULL;
+
+			pexpr->pat = PAT_LIST;
 
 			// Next element
 			if (!is_rollback) {
@@ -376,10 +417,14 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					faux_str_free(tmp);
 					faux_argv_each(&arg);
 					str = (const char *)faux_argv_current(arg);
+
+					pexpr->pat = PAT_LIST_KEY_INCOMPLETED;
 				}
 				if (break_upper_loop)
 					break;
 			}
+
+			pexpr->pat = PAT_LIST_KEY;
 
 			// Completion
 			if (!str) {
@@ -397,6 +442,9 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 			// Next element
 			if (LY_TYPE_EMPTY == leaf->type->basetype) {
+
+				pexpr->pat = PAT_LEAF_EMPTY;
+
 				// Completion
 				if (!str) {
 					pline_add_compl_subtree(pline,
@@ -407,12 +455,18 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 				// really consumed
 				next_arg = BOOL_FALSE;
 			} else {
+
+				pexpr->pat = PAT_LEAF;
+
 				// Completion
 				if (!str) {
 					pline_add_compl(pline,
 						PCOMPL_TYPE, node, NULL);
 					break;
 				}
+
+				pexpr->pat = PAT_LEAF_VALUE;
+
 				// Idenity must have prefix
 				if (LY_TYPE_IDENT == leaf->type->basetype) {
 					const char *prefix = NULL;
@@ -438,12 +492,16 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			struct lysc_node_leaflist *leaflist =
 				(struct lysc_node_leaflist *)node;
 
+			pexpr->pat = PAT_LEAFLIST;
+
 			// Completion
 			if (!str) {
 				pline_add_compl(pline,
 					PCOMPL_TYPE, node, pexpr->xpath);
 				break;
 			}
+
+			pexpr->pat = PAT_LEAFLIST_VALUE;
 
 			// Idenity must have prefix
 			if (LY_TYPE_IDENT == leaflist->type->basetype) {
