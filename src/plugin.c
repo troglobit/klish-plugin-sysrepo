@@ -33,8 +33,22 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	assert(plugin);
 
 	// Symbols
-	kplugin_add_syms(plugin, ksym_new("srp_compl", srp_compl));
-	kplugin_add_syms(plugin, ksym_new("srp_help", srp_help));
+
+	// Types
+	kplugin_add_syms(plugin, ksym_new_ext("PLINE_SET", srp_PLINE_SET,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("PLINE_DEL", srp_PLINE_DEL,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("PLINE_EDIT", srp_PLINE_EDIT,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+
+	// Completion/Help
+	kplugin_add_syms(plugin, ksym_new_ext("srp_compl", srp_compl,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("srp_help", srp_help,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+
+	// Operations
 	kplugin_add_syms(plugin, ksym_new("srp_set", srp_set));
 
 	return 0;

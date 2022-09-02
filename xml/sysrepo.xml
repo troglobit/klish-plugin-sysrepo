@@ -7,14 +7,34 @@
 <PLUGIN name="sysrepo"/>
 
 
-<ENTRY name="PLINE" purpose="ptype">
+<ENTRY name="PLINE_SET" purpose="ptype">
 	<ENTRY name="completion" purpose="completion">
 		<ACTION sym="srp_compl@sysrepo"/>
 	</ENTRY>
 	<ENTRY name="help" purpose="help">
 		<ACTION sym="srp_help@sysrepo"/>
 	</ENTRY>
-	<ACTION sym="STRING"/>
+	<ACTION sym="PLINE_SET@sysrepo"/>
+</ENTRY>
+
+<ENTRY name="PLINE_DEL" purpose="ptype">
+	<ENTRY name="completion" purpose="completion">
+		<ACTION sym="srp_compl@sysrepo"/>
+	</ENTRY>
+	<ENTRY name="help" purpose="help">
+		<ACTION sym="srp_help@sysrepo"/>
+	</ENTRY>
+	<ACTION sym="PLINE_DEL@sysrepo"/>
+</ENTRY>
+
+<ENTRY name="PLINE_EDIT" purpose="ptype">
+	<ENTRY name="completion" purpose="completion">
+		<ACTION sym="srp_compl@sysrepo"/>
+	</ENTRY>
+	<ENTRY name="help" purpose="help">
+		<ACTION sym="srp_help@sysrepo"/>
+	</ENTRY>
+	<ACTION sym="PLINE_EDIT@sysrepo"/>
 </ENTRY>
 
 
@@ -31,7 +51,7 @@
 <ENTRY name="set" help="Clear settings" mode="sequence">
 	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 	<ENTRY name="path" max="100">
-		<ENTRY name="PLINE" purpose="ptype" ref="/PLINE"/>
+		<ENTRY name="PLINE_SET" purpose="ptype" ref="/PLINE_SET"/>
 	</ENTRY>
 	<ACTION sym="srp_set@sysrepo"/>
 </ENTRY>

@@ -38,6 +38,9 @@ typedef enum {
 		PAT_LEAF_EMPTY |
 		PAT_LEAFLIST_VALUE,
 
+	PT_NOT_SET =
+		0,
+
 	PT_DEL =
 		PAT_CONTAINER |
 		PAT_LIST_KEY |
@@ -46,9 +49,18 @@ typedef enum {
 		PAT_LEAFLIST |
 		PAT_LEAFLIST_VALUE,
 
+	PT_NOT_DEL =
+		PAT_LEAF_VALUE,
+
 	PT_EDIT =
 		PAT_CONTAINER |
 		PAT_LIST_KEY,
+
+	PT_NOT_EDIT =
+		PAT_LEAF |
+		PAT_LEAF_VALUE |
+		PAT_LEAFLIST |
+		PAT_LEAFLIST_VALUE,
 
 } pt_e;
 
@@ -90,6 +102,7 @@ C_DECL_BEGIN
 
 pline_t *pline_new(sr_session_ctx_t *sess);
 pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags);
+pexpr_t *pline_current_expr(pline_t *pline);
 
 void pline_free(pline_t *pline);
 

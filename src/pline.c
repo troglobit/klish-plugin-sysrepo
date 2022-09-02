@@ -130,7 +130,7 @@ static pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
 }
 
 
-static pexpr_t *pline_current_expr(pline_t *pline)
+pexpr_t *pline_current_expr(pline_t *pline)
 {
 	assert(pline);
 
