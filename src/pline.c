@@ -564,6 +564,7 @@ pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 	struct lys_module *module = NULL;
 	pline_t *pline = NULL;
 	uint32_t i = 0;
+	faux_list_node_t *last_expr_node = NULL;
 
 	assert(sess);
 	if (!sess)
@@ -592,6 +593,14 @@ pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 	}
 
 	sr_session_release_context(pline->sess);
+
+	// Last parsed expression can be inactive so remove it from list
+	last_expr_node = faux_list_tail(pline->exprs);
+	if (last_expr_node) {
+		pexpr_t *expr = (pexpr_t *)faux_list_data(last_expr_node);
+		if (!expr->active)
+			faux_list_del(pline->exprs, last_expr_node);
+	}
 
 	return pline;
 }

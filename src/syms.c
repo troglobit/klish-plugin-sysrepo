@@ -93,6 +93,7 @@ int srp_help(kcontext_t *context)
 
 int srp_set(kcontext_t *context)
 {
+	int ret = 0;
 	faux_argv_t *args = NULL;
 	pline_t *pline = NULL;
 	sr_conn_ctx_t *conn = NULL;
@@ -114,14 +115,23 @@ int srp_set(kcontext_t *context)
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
 
+	if (pline->invalid) {
+		fprintf(stderr, "Invalid set request\n");
+		ret = -1;
+		goto cleanup;
+	}
+
 	iter = faux_list_head(pline->exprs);
 	while ((expr = (pexpr_t *)faux_list_each(&iter))) {
-		if (!expr->active)
+		if (!(expr->pat & PT_SET)) {
+			err_num++;
+			fprintf(stderr, "Illegal expression for set operation\n");
 			break;
+		}
 		if (sr_set_item_str(sess, expr->xpath, expr->value, NULL, 0) !=
 			SR_ERR_OK) {
 			err_num++;
-			fprintf(stderr, "Can't set data");
+			fprintf(stderr, "Can't set data\n");
 			break;
 		}
 	}
@@ -133,11 +143,12 @@ int srp_set(kcontext_t *context)
 			sr_apply_changes(sess, 0);
 	}
 
+	if (err_num > 0)
+		ret = -1;
+
+cleanup:
 	pline_free(pline);
 	sr_disconnect(conn);
 
-	if (err_num > 0)
-		return -1;
-
-	return 0;
+	return ret;
 }
