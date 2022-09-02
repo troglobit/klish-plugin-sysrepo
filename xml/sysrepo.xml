@@ -40,29 +40,33 @@
 
 <ENTRY name="sysrepo" mode="switch" container="true">
 
+	<ENTRY name="prompt" purpose="prompt">
+		<ACTION sym="print">#</ACTION>
+	</ENTRY>
+
 <!--
-<ENTRY name="exit" help="Exit view">
-	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-	<ACTION sym="nav">pop</ACTION>
-	<ACTION sym="print">Exiting klish session</ACTION>
-</ENTRY>
+	<ENTRY name="exit" help="Exit view">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="nav">pop</ACTION>
+		<ACTION sym="print">Exiting klish session</ACTION>
+	</ENTRY>
 -->
 
-<ENTRY name="set" help="Set data to database" mode="sequence">
-	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-	<ENTRY name="path" max="100">
-		<ENTRY name="PLINE_SET" purpose="ptype" ref="/PLINE_SET"/>
+	<ENTRY name="set" help="Set data to database" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="path" max="100">
+			<ENTRY name="PLINE_SET" purpose="ptype" ref="/PLINE_SET"/>
+		</ENTRY>
+		<ACTION sym="srp_set@sysrepo"/>
 	</ENTRY>
-	<ACTION sym="srp_set@sysrepo"/>
-</ENTRY>
 
-<ENTRY name="del" help="Delete data from database" mode="sequence">
-	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-	<ENTRY name="path" max="100">
-		<ENTRY name="PLINE_DEL" purpose="ptype" ref="/PLINE_DEL"/>
+	<ENTRY name="del" help="Delete data from database" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="path" max="100">
+			<ENTRY name="PLINE_DEL" purpose="ptype" ref="/PLINE_DEL"/>
+		</ENTRY>
+		<ACTION sym="srp_del@sysrepo"/>
 	</ENTRY>
-	<ACTION sym="srp_del@sysrepo"/>
-</ENTRY>
 
 </ENTRY>
 
