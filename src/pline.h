@@ -80,6 +80,7 @@ typedef struct {
 // Plain LINE
 typedef struct pline_s {
 	sr_session_ctx_t *sess;
+	bool_t invalid;
 	faux_list_t *exprs;
 	faux_list_t *compls;
 } pline_t;

@@ -94,6 +94,7 @@ pline_t *pline_new(sr_session_ctx_t *sess)
 
 	// Init
 	pline->sess = sess;
+	pline->invalid = BOOL_FALSE;
 	pline->exprs = faux_list_new(FAUX_LIST_UNSORTED, FAUX_LIST_NONUNIQUE,
 		NULL, NULL, (faux_list_free_fn)pexpr_free);
 	pline->compls = faux_list_new(FAUX_LIST_UNSORTED, FAUX_LIST_NONUNIQUE,
@@ -185,6 +186,11 @@ void pline_debug(pline_t *pline)
 	faux_list_node_t *iter = NULL;
 	pexpr_t *pexpr = NULL;
 	pcompl_t *pcompl = NULL;
+
+	printf("====== Pline:\n\n");
+
+	printf("invalid = %s\n", pline->invalid ? "true" : "false");
+	printf("\n");
 
 	printf("=== Expressions:\n\n");
 
@@ -318,6 +324,13 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 	// Rollback is a mechanism to roll to previous node while
 	// oneliners parsing
 	bool_t rollback = BOOL_FALSE;
+	pexpr_t *first_pexpr = NULL;
+
+	// It's necessary because upper function can use the same pline object
+	// for another modules before. It uses the same object to collect
+	// possible completions. But pline is really invalid only when all
+	// modules don't recognize argument.
+	pline->invalid = BOOL_FALSE;
 
 	do {
 		pexpr_t *pexpr = pline_current_expr(pline);
@@ -355,13 +368,13 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			// Completion
 			if (!str) {
 				pline_add_compl_subtree(pline, module, node);
-				return BOOL_FALSE;
+				break;
 			}
 
 			// Next element
 			node = find_child(module->compiled->data, str);
 			if (!node)
-				return BOOL_FALSE;
+				break;
 
 		// Container
 		} else if (node->nodetype & LYS_CONTAINER) {
@@ -426,7 +439,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 			pexpr->pat = PAT_LIST_KEY;
 
-			// Completion
+ 			// Completion
 			if (!str) {
 				pline_add_compl_subtree(pline, module, node);
 				break;
@@ -522,11 +535,24 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			rollback = BOOL_TRUE;
 		}
 
+		// Current argument was not consumed.
+		// Break before getting next arg.
+		if (!node && !rollback)
+			break;
+
 		if (next_arg)
 			faux_argv_each(&arg);
-	} while (node || rollback);
+	} while (BOOL_TRUE);
+
+	// There is not-consumed argument so whole pline is invalid
+	if (faux_argv_current(arg))
+		pline->invalid = BOOL_TRUE;
 
 	faux_str_free(rollback_xpath);
+
+	first_pexpr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
+	if (!first_pexpr || !first_pexpr->xpath)
+		return BOOL_FALSE; // Not found
 
 	return BOOL_TRUE;
 }
