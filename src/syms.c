@@ -219,3 +219,62 @@ cleanup:
 
 	return ret;
 }
+
+
+int srp_del(kcontext_t *context)
+{
+	int ret = 0;
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	pexpr_t *expr = NULL;
+	size_t err_num = 0;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	args = param2argv(kcontext_pargv(context), "path");
+	pline = pline_parse(sess, args, 0);
+	faux_argv_free(args);
+
+	if (pline->invalid) {
+		fprintf(stderr, "Invalid 'del' request\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	if (faux_list_len(pline->exprs) > 1) {
+		fprintf(stderr, "Can't delete more than one object\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
+
+	if (!(expr->pat & PT_DEL)) {
+		fprintf(stderr, "Illegal expression for 'del' operation\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	if (sr_delete_item(sess, expr->xpath, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Can't delete data\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	sr_apply_changes(sess, 0);
+
+cleanup:
+	pline_free(pline);
+	sr_disconnect(conn);
+
+	return ret;
+}

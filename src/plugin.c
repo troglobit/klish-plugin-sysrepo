@@ -50,6 +50,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 
 	// Operations
 	kplugin_add_syms(plugin, ksym_new("srp_set", srp_set));
+	kplugin_add_syms(plugin, ksym_new("srp_del", srp_del));
 
 	return 0;
 }

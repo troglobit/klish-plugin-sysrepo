@@ -48,12 +48,20 @@
 </ENTRY>
 -->
 
-<ENTRY name="set" help="Clear settings" mode="sequence">
+<ENTRY name="set" help="Set data to database" mode="sequence">
 	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 	<ENTRY name="path" max="100">
 		<ENTRY name="PLINE_SET" purpose="ptype" ref="/PLINE_SET"/>
 	</ENTRY>
 	<ACTION sym="srp_set@sysrepo"/>
+</ENTRY>
+
+<ENTRY name="del" help="Delete data from database" mode="sequence">
+	<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+	<ENTRY name="path" max="100">
+		<ENTRY name="PLINE_DEL" purpose="ptype" ref="/PLINE_DEL"/>
+	</ENTRY>
+	<ACTION sym="srp_del@sysrepo"/>
 </ENTRY>
 
 </ENTRY>

@@ -11,14 +11,18 @@
 
 C_DECL_BEGIN
 
+// Types
 int srp_PLINE_SET(kcontext_t *context);
 int srp_PLINE_DEL(kcontext_t *context);
 int srp_PLINE_EDIT(kcontext_t *context);
 
+// Completion/Help
 int srp_compl(kcontext_t *context);
 int srp_help(kcontext_t *context);
 
+// Operations
 int srp_set(kcontext_t *context);
+int srp_del(kcontext_t *context);
 
 C_DECL_END
 
