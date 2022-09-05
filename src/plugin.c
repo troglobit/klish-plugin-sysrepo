@@ -42,15 +42,20 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	kplugin_add_syms(plugin, ksym_new_ext("PLINE_EDIT", srp_PLINE_EDIT,
 		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
 
-	// Completion/Help
+	// Completion/Help/Prompt
 	kplugin_add_syms(plugin, ksym_new_ext("srp_compl", srp_compl,
 		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
 	kplugin_add_syms(plugin, ksym_new_ext("srp_help", srp_help,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("srp_prompt_edit_path", srp_prompt_edit_path,
 		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
 
 	// Operations
 	kplugin_add_syms(plugin, ksym_new("srp_set", srp_set));
 	kplugin_add_syms(plugin, ksym_new("srp_del", srp_del));
+	// Note: srp_edit() must be sync to set current path
+	kplugin_add_syms(plugin, ksym_new_ext("srp_edit", srp_edit,
+		KSYM_USERDEFINED_PERMANENT, KSYM_SYNC));
 
 	return 0;
 }
