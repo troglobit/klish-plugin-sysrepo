@@ -20,6 +20,7 @@
 #include <sysrepo/xpath.h>
 
 #include "pline.h"
+#include "syms.h"
 
 
 static faux_argv_t *param2argv(const faux_argv_t *cur_path,
@@ -67,7 +68,7 @@ static int srp_compl_or_help(kcontext_t *context, bool_t help)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -137,7 +138,7 @@ static int srp_check_type(kcontext_t *context,
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -206,7 +207,7 @@ int srp_set(kcontext_t *context)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -272,7 +273,7 @@ int srp_del(kcontext_t *context)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -335,7 +336,7 @@ int srp_edit(kcontext_t *context)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -419,7 +420,7 @@ int srp_up(kcontext_t *context)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}

@@ -8,6 +8,8 @@
 #include <faux/faux.h>
 #include <klish/kcontext_base.h>
 
+// Repository to edit with srp commands
+#define SRP_REPO_EDIT SR_DS_CANDIDATE
 
 C_DECL_BEGIN
 
