@@ -37,6 +37,8 @@ static pexpr_t *pexpr_new(void)
 	pexpr->value = NULL;
 	pexpr->active = BOOL_FALSE;
 	pexpr->pat = PAT_NONE;
+	pexpr->args_num = 0;
+	pexpr->list_pos = 0;
 
 	return pexpr;
 }
@@ -236,6 +238,8 @@ void pline_debug(pline_t *pline)
 			break;
 		}
 		printf("pexpr.pat = %s\n", pat);
+		printf("pexpr.args_num = %lu\n", pexpr->args_num);
+		printf("pexpr.list_pos = %lu\n", pexpr->list_pos);
 		printf("\n");
 	}
 
@@ -356,6 +360,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 				node->module->name, node->name);
 			faux_str_cat(&pexpr->xpath, tmp);
 			faux_str_free(tmp);
+			pexpr->args_num++;
 
 			// Activate current expression. Because it really has
 			// new component
@@ -395,6 +400,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			const struct lysc_node *iter = NULL;
 
 			pexpr->pat = PAT_LIST;
+			pexpr->list_pos = pexpr->args_num;
 
 			// Next element
 			if (!is_rollback) {
@@ -428,6 +434,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 						leaf->name, str);
 					faux_str_cat(&pexpr->xpath, tmp);
 					faux_str_free(tmp);
+					pexpr->args_num++;
 					faux_argv_each(&arg);
 					str = (const char *)faux_argv_current(arg);
 
@@ -506,6 +513,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 				(struct lysc_node_leaflist *)node;
 
 			pexpr->pat = PAT_LEAFLIST;
+			pexpr->list_pos = pexpr->args_num;
 
 			// Completion
 			if (!str) {
@@ -527,6 +535,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			prefix ? prefix : "", prefix ? ":" : "", str);
 			faux_str_cat(&pexpr->xpath, tmp);
 			faux_str_free(tmp);
+			pexpr->args_num++;
 
 			// Expression was completed
 			// So rollback (for oneliners)
