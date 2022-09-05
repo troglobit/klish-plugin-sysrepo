@@ -53,8 +53,12 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	// Operations
 	kplugin_add_syms(plugin, ksym_new("srp_set", srp_set));
 	kplugin_add_syms(plugin, ksym_new("srp_del", srp_del));
-	// Note: srp_edit() must be sync to set current path
+	// Note: 'edit', 'top', 'up'  must be sync to set current path
 	kplugin_add_syms(plugin, ksym_new_ext("srp_edit", srp_edit,
+		KSYM_USERDEFINED_PERMANENT, KSYM_SYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("srp_top", srp_top,
+		KSYM_USERDEFINED_PERMANENT, KSYM_SYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("srp_up", srp_up,
 		KSYM_USERDEFINED_PERMANENT, KSYM_SYNC));
 
 	return 0;

@@ -41,16 +41,15 @@
 <ENTRY name="sysrepo" mode="switch" container="true">
 
 	<ENTRY name="prompt" purpose="prompt">
-		<ACTION sym="print">#</ACTION>
+		<ACTION sym="srp_prompt_edit_path@sysrepo"/>
+		<ACTION sym="print"># </ACTION>
 	</ENTRY>
 
-<!--
-	<ENTRY name="exit" help="Exit view">
+	<ENTRY name="exit" help="Exit configuration mode or level up">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-		<ACTION sym="nav">pop</ACTION>
-		<ACTION sym="print">Exiting klish session</ACTION>
+		<ACTION sym="srp_up@sysrepo"/>
+		<ACTION sym="nav" exec_on="fail">pop</ACTION>
 	</ENTRY>
--->
 
 	<ENTRY name="set" help="Set data to database" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
@@ -66,6 +65,24 @@
 			<ENTRY name="PLINE_DEL" purpose="ptype" ref="/PLINE_DEL"/>
 		</ENTRY>
 		<ACTION sym="srp_del@sysrepo"/>
+	</ENTRY>
+
+	<ENTRY name="edit" help="Edit data hierarchy" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="path" max="100">
+			<ENTRY name="PLINE_EDIT" purpose="ptype" ref="/PLINE_EDIT"/>
+		</ENTRY>
+		<ACTION sym="srp_edit@sysrepo"/>
+	</ENTRY>
+
+	<ENTRY name="top" help="Edit top data level" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="srp_top@sysrepo"/>
+	</ENTRY>
+
+	<ENTRY name="up" help="Up data level" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="srp_up@sysrepo"/>
 	</ENTRY>
 
 </ENTRY>

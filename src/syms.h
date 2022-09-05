@@ -25,6 +25,8 @@ int srp_prompt_edit_path(kcontext_t *context);
 int srp_set(kcontext_t *context);
 int srp_del(kcontext_t *context);
 int srp_edit(kcontext_t *context);
+int srp_top(kcontext_t *context);
+int srp_up(kcontext_t *context);
 
 C_DECL_END
 

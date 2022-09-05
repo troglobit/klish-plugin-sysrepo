@@ -99,6 +99,25 @@ int srp_help(kcontext_t *context)
 }
 
 
+int srp_prompt_edit_path(kcontext_t *context)
+{
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+	char *path = NULL;
+
+	assert(context);
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	if (cur_path)
+		path = faux_argv_line(cur_path);
+	printf("[edit%s%s]\n", path ? " " : "", path ? path : "");
+	faux_str_free(path);
+
+	return 0;
+}
+
+
 static int srp_check_type(kcontext_t *context,
 	pt_e not_accepted_nodes,
 	size_t max_expr_num)
@@ -367,20 +386,81 @@ cleanup:
 }
 
 
-int srp_prompt_edit_path(kcontext_t *context)
+int srp_top(kcontext_t *context)
 {
 	faux_argv_t *cur_path = NULL;
 	kplugin_t *plugin = NULL;
-	char *path = NULL;
 
 	assert(context);
 
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
-	if (cur_path)
-		path = faux_argv_line(cur_path);
-	printf("[edit%s%s]\n", path ? " " : "", path ? path : "");
-	faux_str_free(path);
+	faux_argv_free(cur_path);
+	kplugin_set_udata(plugin, NULL);
 
 	return 0;
 }
+
+
+int srp_up(kcontext_t *context)
+{
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+	faux_argv_node_t *iter = NULL;
+
+	assert(context);
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	if (!cur_path)
+		return -1; // It's top level and can't level up
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	// Remove last arguments one by one and wait for legal edit-like pline
+	while (faux_argv_len(cur_path) > 0) {
+		pline_t *pline = NULL;
+		pexpr_t *expr = NULL;
+		size_t len = 0;
+
+		iter = faux_argv_iterr(cur_path);
+		faux_argv_del(cur_path, iter);
+		pline = pline_parse(sess, cur_path, 0);
+		if (pline->invalid) {
+			pline_free(pline);
+			continue;
+		}
+		len = faux_list_len(pline->exprs);
+		if (len != 1) {
+			pline_free(pline);
+			continue;
+		}
+		expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
+		if (!(expr->pat & PT_EDIT)) {
+			pline_free(pline);
+			continue;
+		}
+		// Here new path is ok
+		pline_free(pline);
+		break;
+	}
+
+	// Don't store empty path
+	while (faux_argv_len(cur_path) == 0) {
+		faux_argv_free(cur_path);
+		kplugin_set_udata(plugin, NULL);
+	}
+
+	sr_disconnect(conn);
+
+	return 0;
+}
+
+
