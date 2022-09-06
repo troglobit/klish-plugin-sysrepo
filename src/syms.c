@@ -196,6 +196,35 @@ int srp_PLINE_INSERT_FROM(kcontext_t *context)
 }
 
 
+static faux_argv_t *assemble_insert_to(sr_session_ctx_t *sess, const kpargv_t *pargv,
+	faux_argv_t *cur_path, const char *candidate_value)
+{
+	faux_argv_t *args = NULL;
+	faux_argv_t *insert_to = NULL;
+	pline_t *pline = NULL;
+	pexpr_t *expr = NULL;
+	size_t i = 0;
+
+	assert(sess);
+
+	args = param2argv(cur_path, pargv, "from_path");
+	pline = pline_parse(sess, args, 0);
+	expr = pline_current_expr(pline);
+	for (i = 0; i < (expr->args_num - expr->list_pos); i++) {
+		faux_argv_node_t *iter = faux_argv_iterr(args);
+		faux_argv_del(args, iter);
+	}
+	insert_to = param2argv(args, pargv, "to_path");
+	faux_argv_free(args);
+	if (candidate_value)
+		faux_argv_add(insert_to, candidate_value);
+
+	pline_free(pline);
+
+	return insert_to;
+}
+
+
 int srp_PLINE_INSERT_TO(kcontext_t *context)
 {
 	return srp_check_type(context, PT_NOT_INSERT, 1);
@@ -489,6 +518,7 @@ int srp_insert(kcontext_t *context)
 	size_t err_num = 0;
 	faux_argv_t *cur_path = NULL;
 	kplugin_t *plugin = NULL;
+	faux_argv_t *insert_to = NULL;
 
 	assert(context);
 
@@ -501,6 +531,13 @@ int srp_insert(kcontext_t *context)
 
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+
+	insert_to = assemble_insert_to(sess, kcontext_pargv(context),
+		cur_path, NULL);
+	printf("insert_to: %s\n", faux_argv_line(insert_to));
+	faux_argv_free(insert_to);
+
+/*
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, 0);
 	faux_argv_free(args);
@@ -538,7 +575,7 @@ int srp_insert(kcontext_t *context)
 
 cleanup:
 	pline_free(pline);
-	sr_disconnect(conn);
+*/	sr_disconnect(conn);
 
 	return ret;
 }
