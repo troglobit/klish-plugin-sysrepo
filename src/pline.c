@@ -117,7 +117,8 @@ void pline_free(pline_t *pline)
 	faux_free(pline);
 }
 
-static pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
+static pexpr_t *pline_add_expr(pline_t *pline, const char *xpath,
+	size_t args_num, size_t list_pos)
 {
 	pexpr_t *pexpr = NULL;
 
@@ -126,6 +127,8 @@ static pexpr_t *pline_add_expr(pline_t *pline, const char *xpath)
 	pexpr = pexpr_new();
 	if (xpath)
 		pexpr->xpath = faux_str_dup(xpath);
+	pexpr->args_num = args_num;
+	pexpr->list_pos = list_pos;
 	faux_list_add(pline->exprs, pexpr);
 
 	return pexpr;
@@ -137,7 +140,7 @@ pexpr_t *pline_current_expr(pline_t *pline)
 	assert(pline);
 
 	if (faux_list_len(pline->exprs) == 0)
-		pline_add_expr(pline, NULL);
+		pline_add_expr(pline, NULL, 0, 0);
 
 	return (pexpr_t *)faux_list_data(faux_list_tail(pline->exprs));
 }
@@ -325,6 +328,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 	faux_argv_node_t *arg = faux_argv_iter(argv);
 	const struct lysc_node *node = NULL;
 	char *rollback_xpath = NULL;
+	size_t rollback_args_num = 0;
+	size_t rollback_list_pos = 0;
 	// Rollback is a mechanism to roll to previous node while
 	// oneliners parsing
 	bool_t rollback = BOOL_FALSE;
@@ -353,6 +358,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			if (node->nodetype & (LYS_LEAF | LYS_LEAFLIST)) {
 				faux_str_free(rollback_xpath);
 				rollback_xpath = faux_str_dup(pexpr->xpath);
+				rollback_args_num = pexpr->args_num;
+				rollback_list_pos = pexpr->list_pos;
 			}
 
 			// Add current node to Xpath
@@ -502,7 +509,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			// Expression was completed
 			// So rollback (for oneliners)
 			node = node->parent;
-			pline_add_expr(pline, rollback_xpath);
+			pline_add_expr(pline, rollback_xpath,
+				rollback_args_num, rollback_list_pos);
 			rollback = BOOL_TRUE;
 
 		// Leaf-list
@@ -540,7 +548,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			// Expression was completed
 			// So rollback (for oneliners)
 			node = node->parent;
-			pline_add_expr(pline, rollback_xpath);
+			pline_add_expr(pline, rollback_xpath,
+				rollback_args_num, rollback_list_pos);
 			rollback = BOOL_TRUE;
 		}
 

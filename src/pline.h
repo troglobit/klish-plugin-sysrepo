@@ -71,8 +71,8 @@ typedef struct {
 	char *value;
 	bool_t active;
 	pat_e pat;
-	size_t args_num; // Legal for single expression only
-	size_t list_pos; // Legal for single expression only
+	size_t args_num;
+	size_t list_pos;
 } pexpr_t;
 
 
