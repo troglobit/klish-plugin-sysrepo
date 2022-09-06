@@ -37,6 +37,36 @@
 	<ACTION sym="PLINE_EDIT@sysrepo"/>
 </ENTRY>
 
+<ENTRY name="PLINE_INSERT_FROM" purpose="ptype">
+	<ENTRY name="completion" purpose="completion">
+		<ACTION sym="srp_compl@sysrepo"/>
+	</ENTRY>
+	<ENTRY name="help" purpose="help">
+		<ACTION sym="srp_help@sysrepo"/>
+	</ENTRY>
+	<ACTION sym="PLINE_INSERT_FROM@sysrepo"/>
+</ENTRY>
+
+<ENTRY name="PLINE_INSERT_TO" purpose="ptype">
+	<ENTRY name="completion" purpose="completion">
+		<ACTION sym="srp_compl@sysrepo"/>
+	</ENTRY>
+	<ENTRY name="help" purpose="help">
+		<ACTION sym="srp_help@sysrepo"/>
+	</ENTRY>
+	<ACTION sym="PLINE_INSERT_TO@sysrepo"/>
+</ENTRY>
+
+
+<ENTRY name="main" container="true">
+
+	<ENTRY name="configure" help="Configure system">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="nav">push sysrepo</ACTION>
+	</ENTRY>
+
+</ENTRY>
+
 
 <ENTRY name="sysrepo" mode="switch" container="true">
 
@@ -83,6 +113,35 @@
 	<ENTRY name="up" help="Up data level" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ACTION sym="srp_up@sysrepo"/>
+	</ENTRY>
+
+	<ENTRY name="insert" help="Insert statement to specified position" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="from_path" max="100">
+			<ENTRY name="PLINE_INSERT_FROM" purpose="ptype" ref="/PLINE_INSERT_FROM"/>
+		</ENTRY>
+		<ENTRY name="position" mode="switch" container="true">
+			<ENTRY name="first" help="First position">
+				<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
+			</ENTRY>
+			<ENTRY name="last" help="Last position">
+				<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
+			</ENTRY>
+			<ENTRY name="relative_block" mode="sequence" container="true">
+				<ENTRY name="position" mode="switch" container="true">
+					<ENTRY name="before" help="Before specified element">
+						<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
+					</ENTRY>
+					<ENTRY name="after" help="After specified element">
+						<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
+					</ENTRY>
+				</ENTRY>
+				<ENTRY name="to_path" max="100">
+					<ENTRY name="PLINE_INSERT_TO" purpose="ptype" ref="/PLINE_INSERT_TO"/>
+				</ENTRY>
+			</ENTRY>
+		</ENTRY>
+		<ACTION sym="srp_insert@sysrepo"/>
 	</ENTRY>
 
 </ENTRY>

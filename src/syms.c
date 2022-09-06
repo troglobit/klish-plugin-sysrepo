@@ -190,6 +190,18 @@ int srp_PLINE_EDIT(kcontext_t *context)
 }
 
 
+int srp_PLINE_INSERT_FROM(kcontext_t *context)
+{
+	return srp_check_type(context, PT_NOT_INSERT, 1);
+}
+
+
+int srp_PLINE_INSERT_TO(kcontext_t *context)
+{
+	return srp_check_type(context, PT_NOT_INSERT, 1);
+}
+
+
 int srp_set(kcontext_t *context)
 {
 	int ret = 0;
@@ -465,3 +477,68 @@ int srp_up(kcontext_t *context)
 }
 
 
+int srp_insert(kcontext_t *context)
+{
+	int ret = 0;
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	faux_list_node_t *iter = NULL;
+	pexpr_t *expr = NULL;
+	size_t err_num = 0;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	args = param2argv(cur_path, kcontext_pargv(context), "path");
+	pline = pline_parse(sess, args, 0);
+	faux_argv_free(args);
+
+	if (pline->invalid) {
+		fprintf(stderr, "Invalid set request\n");
+		ret = -1;
+		goto cleanup;
+	}
+
+	iter = faux_list_head(pline->exprs);
+	while ((expr = (pexpr_t *)faux_list_each(&iter))) {
+		if (!(expr->pat & PT_SET)) {
+			err_num++;
+			fprintf(stderr, "Illegal expression for set operation\n");
+			break;
+		}
+		if (sr_set_item_str(sess, expr->xpath, expr->value, NULL, 0) !=
+			SR_ERR_OK) {
+			err_num++;
+			fprintf(stderr, "Can't set data\n");
+			break;
+		}
+	}
+
+	if (sr_has_changes(sess)) {
+		if (err_num > 0)
+			sr_discard_changes(sess);
+		else
+			sr_apply_changes(sess, 0);
+	}
+
+	if (err_num > 0)
+		ret = -1;
+
+cleanup:
+	pline_free(pline);
+	sr_disconnect(conn);
+
+	return ret;
+}

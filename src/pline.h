@@ -62,6 +62,14 @@ typedef enum {
 		PAT_LEAFLIST |
 		PAT_LEAFLIST_VALUE,
 
+	PT_INSERT =
+		PAT_LIST_KEY |
+		PAT_LEAFLIST_VALUE,
+
+	PT_NOT_INSERT =
+		PAT_LEAF |
+		PAT_LEAF_VALUE,
+
 } pt_e;
 
 
