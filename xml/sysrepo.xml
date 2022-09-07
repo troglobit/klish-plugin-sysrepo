@@ -81,6 +81,8 @@
 		<ACTION sym="nav" exec_on="fail">replace main</ACTION>
 	</ENTRY>
 
+	<ENTRY name="quit" ref="/sysrepo/exit"/>
+
 	<ENTRY name="run" help="Run operational mode command">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ENTRY name="operational" mode="switch" container="true" ref="/main"/>
