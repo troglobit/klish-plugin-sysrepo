@@ -62,7 +62,7 @@
 
 	<ENTRY name="configure" help="Configure system">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-		<ACTION sym="nav">push sysrepo</ACTION>
+		<ACTION sym="nav">replace sysrepo</ACTION>
 	</ENTRY>
 
 </ENTRY>
@@ -78,7 +78,7 @@
 	<ENTRY name="exit" help="Exit configuration mode or level up">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ACTION sym="srp_up@sysrepo"/>
-		<ACTION sym="nav" exec_on="fail">pop</ACTION>
+		<ACTION sym="nav" exec_on="fail">replace main</ACTION>
 	</ENTRY>
 
 	<ENTRY name="set" help="Set data to database" mode="sequence">

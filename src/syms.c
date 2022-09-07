@@ -390,7 +390,7 @@ cleanup:
 
 int srp_del(kcontext_t *context)
 {
-	int ret = 0;
+	int ret = -1;
 	faux_argv_t *args = NULL;
 	pline_t *pline = NULL;
 	sr_conn_ctx_t *conn = NULL;
@@ -417,33 +417,30 @@ int srp_del(kcontext_t *context)
 
 	if (pline->invalid) {
 		fprintf(stderr, "Invalid 'del' request\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
 		fprintf(stderr, "Can't delete more than one object\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 
 	if (!(expr->pat & PT_DEL)) {
 		fprintf(stderr, "Illegal expression for 'del' operation\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	if (sr_delete_item(sess, expr->xpath, 0) != SR_ERR_OK) {
 		fprintf(stderr, "Can't delete data\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	sr_apply_changes(sess, 0);
 
-cleanup:
+	ret = 0;
+err:
 	pline_free(pline);
 	sr_disconnect(conn);
 
@@ -453,7 +450,7 @@ cleanup:
 
 int srp_edit(kcontext_t *context)
 {
-	int ret = 0;
+	int ret = -1;
 	faux_argv_t *args = NULL;
 	pline_t *pline = NULL;
 	sr_conn_ctx_t *conn = NULL;
@@ -479,28 +476,24 @@ int srp_edit(kcontext_t *context)
 
 	if (pline->invalid) {
 		fprintf(stderr, "Invalid 'edit' request\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
 		fprintf(stderr, "Can't process more than one object\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 
 	if (!(expr->pat & PT_EDIT)) {
 		fprintf(stderr, "Illegal expression for 'edit' operation\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 
 	if (sr_set_item_str(sess, expr->xpath, NULL, NULL, 0) != SR_ERR_OK) {
 		fprintf(stderr, "Can't set editing data\n");
-		ret = -1;
-		goto cleanup;
+		goto err;
 	}
 	sr_apply_changes(sess, 0);
 
@@ -508,7 +501,8 @@ int srp_edit(kcontext_t *context)
 	faux_argv_free(cur_path);
 	kplugin_set_udata(plugin, args);
 
-cleanup:
+	ret = 0;
+err:
 	if (ret < 0)
 		faux_argv_free(args);
 	pline_free(pline);
