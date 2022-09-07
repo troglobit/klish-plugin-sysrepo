@@ -39,6 +39,7 @@ static pexpr_t *pexpr_new(void)
 	pexpr->pat = PAT_NONE;
 	pexpr->args_num = 0;
 	pexpr->list_pos = 0;
+	pexpr->last_keys = NULL;
 
 	return pexpr;
 }
@@ -51,6 +52,7 @@ static void pexpr_free(pexpr_t *pexpr)
 
 	faux_str_free(pexpr->xpath);
 	faux_str_free(pexpr->value);
+	faux_str_free(pexpr->last_keys);
 
 	free(pexpr);
 }
@@ -243,6 +245,7 @@ void pline_debug(pline_t *pline)
 		printf("pexpr.pat = %s\n", pat);
 		printf("pexpr.args_num = %lu\n", pexpr->args_num);
 		printf("pexpr.list_pos = %lu\n", pexpr->list_pos);
+		printf("pexpr.last_keys = %s\n", pexpr->last_keys ? pexpr->last_keys : "NULL");
 		printf("\n");
 	}
 
@@ -408,6 +411,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 			pexpr->pat = PAT_LIST;
 			pexpr->list_pos = pexpr->args_num;
+			faux_str_free(pexpr->last_keys);
+			pexpr->last_keys = NULL;
 
 			// Next element
 			if (!is_rollback) {
@@ -440,6 +445,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					tmp = faux_str_sprintf("[%s='%s']",
 						leaf->name, str);
 					faux_str_cat(&pexpr->xpath, tmp);
+					faux_str_cat(&pexpr->last_keys, tmp);
 					faux_str_free(tmp);
 					pexpr->args_num++;
 					faux_argv_each(&arg);
@@ -522,6 +528,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 			pexpr->pat = PAT_LEAFLIST;
 			pexpr->list_pos = pexpr->args_num;
+			faux_str_free(pexpr->last_keys);
+			pexpr->last_keys = NULL;
 
 			// Completion
 			if (!str) {
@@ -542,6 +550,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			tmp = faux_str_sprintf("[.='%s%s%s']",
 			prefix ? prefix : "", prefix ? ":" : "", str);
 			faux_str_cat(&pexpr->xpath, tmp);
+			faux_str_cat(&pexpr->last_keys, str);
 			faux_str_free(tmp);
 			pexpr->args_num++;
 

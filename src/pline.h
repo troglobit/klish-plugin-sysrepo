@@ -81,6 +81,7 @@ typedef struct {
 	pat_e pat;
 	size_t args_num;
 	size_t list_pos;
+	char *last_keys;
 } pexpr_t;
 
 

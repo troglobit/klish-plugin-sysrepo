@@ -23,6 +23,8 @@ int srp_PLINE_INSERT_TO(kcontext_t *context);
 // Completion/Help/Prompt
 int srp_compl(kcontext_t *context);
 int srp_help(kcontext_t *context);
+int srp_compl_insert_to(kcontext_t *context);
+int srp_help_insert_to(kcontext_t *context);
 int srp_prompt_edit_path(kcontext_t *context);
 
 // Operations

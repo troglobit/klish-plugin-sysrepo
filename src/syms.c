@@ -123,6 +123,7 @@ static int srp_check_type(kcontext_t *context,
 	pt_e not_accepted_nodes,
 	size_t max_expr_num)
 {
+	int ret = -1;
 	faux_argv_t *args = NULL;
 	pline_t *pline = NULL;
 	sr_conn_ctx_t *conn = NULL;
@@ -154,21 +155,23 @@ static int srp_check_type(kcontext_t *context,
 	faux_argv_free(args);
 
 	if (pline->invalid)
-		return -1;
+		goto err;
 	expr_num = faux_list_len(pline->exprs);
 	if (expr_num < 1)
-		return -1;
+		goto err;
 	if ((max_expr_num > 0) &&  // '0' means unlimited
 		(expr_num > max_expr_num))
-		return -1;
+		goto err;
 	expr = pline_current_expr(pline);
 	if (expr->pat & not_accepted_nodes)
-		return -1;
+		goto err;
 
+	ret = 0;
+err:
 	pline_free(pline);
 	sr_disconnect(conn);
 
-	return 0;
+	return ret;
 }
 
 
@@ -227,7 +230,94 @@ static faux_argv_t *assemble_insert_to(sr_session_ctx_t *sess, const kpargv_t *p
 
 int srp_PLINE_INSERT_TO(kcontext_t *context)
 {
-	return srp_check_type(context, PT_NOT_INSERT, 1);
+	int ret = -1;
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	const char *value = NULL;
+	pexpr_t *expr = NULL;
+	size_t expr_num = 0;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	value = kcontext_candidate_value(context);
+	args = assemble_insert_to(sess, kcontext_parent_pargv(context),
+		cur_path, value);
+	pline = pline_parse(sess, args, 0);
+	faux_argv_free(args);
+
+	if (pline->invalid)
+		goto err;
+	expr_num = faux_list_len(pline->exprs);
+	if (expr_num != 1)
+		goto err;
+	expr = pline_current_expr(pline);
+	if (expr->pat & PT_NOT_INSERT)
+		goto err;
+
+	ret = 0;
+err:
+	pline_free(pline);
+	sr_disconnect(conn);
+
+	return ret;
+}
+
+
+static int srp_compl_or_help_insert_to(kcontext_t *context, bool_t help)
+{
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	args = assemble_insert_to(sess, kcontext_parent_pargv(context),
+		cur_path, NULL);
+	pline = pline_parse(sess, args, 0);
+	faux_argv_free(args);
+	pline_print_completions(pline, help);
+	pline_free(pline);
+
+	sr_disconnect(conn);
+
+	return 0;
+}
+
+
+int srp_compl_insert_to(kcontext_t *context)
+{
+	return srp_compl_or_help_insert_to(context, BOOL_FALSE);
+}
+
+
+int srp_help_insert_to(kcontext_t *context)
+{
+	return srp_compl_or_help_insert_to(context, BOOL_TRUE);
 }
 
 
@@ -508,17 +598,22 @@ int srp_up(kcontext_t *context)
 
 int srp_insert(kcontext_t *context)
 {
-	int ret = 0;
-	faux_argv_t *args = NULL;
+	int ret = -1;
 	pline_t *pline = NULL;
+	pline_t *pline_to = NULL;
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
 	faux_list_node_t *iter = NULL;
 	pexpr_t *expr = NULL;
-	size_t err_num = 0;
+	pexpr_t *expr_to = NULL;
 	faux_argv_t *cur_path = NULL;
 	kplugin_t *plugin = NULL;
+	faux_argv_t *insert_from = NULL;
 	faux_argv_t *insert_to = NULL;
+	sr_move_position_t position = SR_MOVE_LAST;
+	kpargv_t *pargv = NULL;
+	const char *list_keys = NULL;
+	const char *leaflist_value = NULL;
 
 	assert(context);
 
@@ -531,51 +626,85 @@ int srp_insert(kcontext_t *context)
 
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	pargv = kcontext_pargv(context);
 
-	insert_to = assemble_insert_to(sess, kcontext_pargv(context),
-		cur_path, NULL);
-	printf("insert_to: %s\n", faux_argv_line(insert_to));
-	faux_argv_free(insert_to);
-
-/*
-	args = param2argv(cur_path, kcontext_pargv(context), "path");
-	pline = pline_parse(sess, args, 0);
-	faux_argv_free(args);
+	// 'from' argument
+	insert_from = param2argv(cur_path, pargv, "from_path");
+	pline = pline_parse(sess, insert_from, 0);
+	faux_argv_free(insert_from);
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid set request\n");
-		ret = -1;
-		goto cleanup;
+		fprintf(stderr, "Invalid 'from' expression\n");
+		goto err;
 	}
 
-	iter = faux_list_head(pline->exprs);
-	while ((expr = (pexpr_t *)faux_list_each(&iter))) {
-		if (!(expr->pat & PT_SET)) {
-			err_num++;
-			fprintf(stderr, "Illegal expression for set operation\n");
-			break;
+	if (faux_list_len(pline->exprs) > 1) {
+		fprintf(stderr, "Can't process more than one object\n");
+		goto err;
+	}
+
+	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
+
+	if (!(expr->pat & PT_INSERT)) {
+		fprintf(stderr, "Illegal 'from' expression for 'insert' operation\n");
+		goto err;
+	}
+
+	// Position
+	if (kpargv_find(pargv, "first"))
+		position = SR_MOVE_FIRST;
+	else if (kpargv_find(pargv, "last"))
+		position = SR_MOVE_LAST;
+	else if (kpargv_find(pargv, "before"))
+		position = SR_MOVE_BEFORE;
+	else if (kpargv_find(pargv, "after"))
+		position = SR_MOVE_AFTER;
+	else {
+		fprintf(stderr, "Illegal 'position' argument\n");
+		goto err;
+	}
+
+	// 'to' argument
+	if ((SR_MOVE_BEFORE == position) || (SR_MOVE_AFTER == position)) {
+		insert_to = assemble_insert_to(sess, pargv, cur_path, NULL);
+		pline_to = pline_parse(sess, insert_to, 0);
+		faux_argv_free(insert_to);
+
+		if (pline_to->invalid) {
+			fprintf(stderr, "Invalid 'to' expression\n");
+			goto err;
 		}
-		if (sr_set_item_str(sess, expr->xpath, expr->value, NULL, 0) !=
-			SR_ERR_OK) {
-			err_num++;
-			fprintf(stderr, "Can't set data\n");
-			break;
+
+		if (faux_list_len(pline_to->exprs) > 1) {
+			fprintf(stderr, "Can't process more than one object\n");
+			goto err;
 		}
+
+		expr_to = (pexpr_t *)faux_list_data(faux_list_head(pline_to->exprs));
+
+		if (!(expr_to->pat & PT_INSERT)) {
+			fprintf(stderr, "Illegal 'to' expression for 'insert' operation\n");
+			goto err;
+		}
+
+		if (PAT_LIST_KEY == expr_to->pat)
+			list_keys = expr_to->last_keys;
+		else // PATH_LEAFLIST_VALUE
+			leaflist_value = expr_to->last_keys;
 	}
 
-	if (sr_has_changes(sess)) {
-		if (err_num > 0)
-			sr_discard_changes(sess);
-		else
-			sr_apply_changes(sess, 0);
+	if (sr_move_item(sess, expr->xpath, position,
+		list_keys, leaflist_value, NULL, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Can't move element\n");
+		goto err;
 	}
+	sr_apply_changes(sess, 0);
 
-	if (err_num > 0)
-		ret = -1;
-
-cleanup:
+	ret = 0;
+err:
 	pline_free(pline);
-*/	sr_disconnect(conn);
+	pline_free(pline_to);
+	sr_disconnect(conn);
 
 	return ret;
 }

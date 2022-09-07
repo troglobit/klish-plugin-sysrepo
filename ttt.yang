@@ -44,4 +44,25 @@ module ttt {
 
     }
   }
+
+
+  list acl {
+    ordered-by user;
+    key "name";
+
+    leaf name {
+      type string;
+    }
+
+    leaf comment {
+      type string;
+    }
+
+    leaf-list multi {
+      ordered-by user;
+      type string;
+    }
+
+  }
+
 }
