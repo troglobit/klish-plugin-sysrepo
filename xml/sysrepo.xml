@@ -109,6 +109,8 @@
 		<ACTION sym="srp_del@sysrepo"/>
 	</ENTRY>
 
+	<ENTRY name="delete" ref="/sysrepo/del"/>
+
 	<ENTRY name="edit" help="Edit data hierarchy" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ENTRY name="path" max="100">
