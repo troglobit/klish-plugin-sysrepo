@@ -81,6 +81,16 @@
 		<ACTION sym="nav" exec_on="fail">replace main</ACTION>
 	</ENTRY>
 
+	<ENTRY name="run" help="Run operational mode command">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="operational" mode="switch" container="true" ref="/main"/>
+	</ENTRY>
+
+	<ENTRY name="do" help="Run operational mode command">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="operational" mode="switch" container="true" ref="/main"/>
+	</ENTRY>
+
 	<ENTRY name="set" help="Set data to database" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ENTRY name="path" max="100">
