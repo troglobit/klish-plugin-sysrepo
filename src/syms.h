@@ -36,6 +36,7 @@ int srp_up(kcontext_t *context);
 int srp_insert(kcontext_t *context);
 int srp_commit(kcontext_t *context);
 int srp_rollback(kcontext_t *context);
+int srp_show(kcontext_t *context);
 
 C_DECL_END
 

@@ -168,6 +168,14 @@
 		<ACTION sym="srp_rollback@sysrepo"/>
 	</ENTRY>
 
+	<ENTRY name="show" help="Show data hierarchy" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="path" min="0" max="100">
+			<ENTRY name="PLINE_EDIT" purpose="ptype" ref="/PLINE_EDIT"/>
+		</ENTRY>
+		<ACTION sym="srp_show@sysrepo"/>
+	</ENTRY>
+
 </ENTRY>
 
 </KLISH>
