@@ -845,6 +845,12 @@ int srp_show(kcontext_t *context)
 //		ly_out_new_file(stdout, &out);
 //		lyd_print_all(out, child, LYD_XML, 0);
 //	}
+
+
+	struct lyd_meta *meta = lyd_find_meta(data->tree->meta, NULL, "junos-configuration-metadata:active");
+	if (meta)
+		printf("META\n");
+
 	sr_release_data(data);
 
 	ret = 0;
@@ -854,3 +860,97 @@ err:
 
 	return ret;
 }
+
+
+int srp_deactivate(kcontext_t *context)
+{
+	int ret = -1;
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	pexpr_t *expr = NULL;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+	sr_data_t *data = NULL;
+	const struct ly_ctx *ctx = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	args = param2argv(cur_path, kcontext_pargv(context), "path");
+	pline = pline_parse(sess, args, 0);
+	faux_argv_free(args);
+
+	if (pline->invalid) {
+		fprintf(stderr, "Invalid 'show' request\n");
+		goto err;
+	}
+
+	if (faux_list_len(pline->exprs) > 1) {
+		fprintf(stderr, "Can't process more than one object\n");
+		goto err;
+	}
+
+	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
+	if (!(expr->pat & PT_DEL)) {
+		fprintf(stderr, "Illegal expression for 'show' operation\n");
+		goto err;
+	}
+
+	if (sr_get_subtree(sess, expr->xpath, 0, &data) != SR_ERR_OK) {
+		fprintf(stderr, "Can't get specified subtree\n");
+		goto err;
+	}
+	if (lyd_new_meta(LYD_CTX(data->tree), data->tree, NULL,
+		"junos-configuration-metadata:active", "false", 0, NULL)) {
+		fprintf(stderr, "Can't deactivate\n");
+		goto err;
+	}
+
+	struct lyd_meta *meta = lyd_find_meta(data->tree->meta, NULL, "junos-configuration-metadata:active");
+	if (meta)
+		printf("META\n");
+
+	if (sr_has_changes(sess))
+		fprintf(stderr, "Has changes\n");
+
+	if (sr_apply_changes(sess, 0)) {
+		fprintf(stderr, "Can't apply changes\n");
+	}
+	sr_release_data(data);
+
+
+	if (sr_get_subtree(sess, expr->xpath, 0, &data) != SR_ERR_OK) {
+		fprintf(stderr, "Can't get specified subtree\n");
+		goto err;
+	}
+
+	struct ly_out *out = NULL;
+	ly_out_new_file(stdout, &out);
+	lyd_print_tree(out, data->tree, LYD_XML, 0);
+	ly_out_free(out, NULL, 0);
+
+	sr_release_data(data);
+
+
+
+
+
+	ret = 0;
+err:
+	pline_free(pline);
+	sr_disconnect(conn);
+
+	return ret;
+}
+
+
