@@ -702,3 +702,60 @@ err:
 
 	return ret;
 }
+
+
+int srp_commit(kcontext_t *context)
+{
+	int ret = -1;
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	pexpr_t *expr = NULL;
+	size_t err_num = 0;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
+		fprintf(stderr, "Can't connect to candidate data store\n");
+		return -1;
+	}
+
+	// Validate candidate config
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		fprintf(stderr, "Can't connect to candidate data store\n");
+		goto err;
+	}
+	if (sr_validate(sess, NULL, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Invalid candidate configuration\n");
+		goto err;
+	}
+
+	// Copy candidate to running-config
+	if (sr_session_switch_ds(sess, SR_DS_RUNNING)) {
+		fprintf(stderr, "Can't connect to running-config data store\n");
+		goto err;
+	}
+	if (sr_copy_config(sess, NULL, SRP_REPO_EDIT, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Can't commit to running-config\n");
+		goto err;
+	}
+
+	// Copy running-config to startup-config
+	if (sr_session_switch_ds(sess, SR_DS_STARTUP)) {
+		fprintf(stderr, "Can't connect to startup-config data store\n");
+		goto err;
+	}
+	if (sr_copy_config(sess, NULL, SR_DS_RUNNING, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Can't store data to startup-config\n");
+		goto err;
+	}
+
+	ret = 0;
+err:
+	sr_disconnect(conn);
+
+	return ret;
+}

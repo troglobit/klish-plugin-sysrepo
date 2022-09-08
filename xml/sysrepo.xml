@@ -158,6 +158,11 @@
 		<ACTION sym="srp_insert@sysrepo"/>
 	</ENTRY>
 
+	<ENTRY name="commit" help="Commit data to running-config" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="srp_commit@sysrepo"/>
+	</ENTRY>
+
 </ENTRY>
 
 </KLISH>
