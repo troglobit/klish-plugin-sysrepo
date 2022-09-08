@@ -19,6 +19,9 @@ int main(int argc, char **argv)
 	faux_argv_t *args = faux_argv_new();
 	pline_t *pline = NULL;
 
+	if (argc < 2)
+		return -1;
+
 	err = sr_connect(SR_CONN_DEFAULT, &conn);
 	if (err) {
 		printf("Error\n");

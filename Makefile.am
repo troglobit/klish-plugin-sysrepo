@@ -10,7 +10,7 @@ if DEBUG
 DEBUG_CFLAGS = -DDEBUG
 endif
 
-AM_CFLAGS = -Wall $(DEBUG_CFLAGS)
+AM_CFLAGS = -Wall -Wextra $(DEBUG_CFLAGS)
 AM_LDFLAGS = -z relro -z now -z defs
 
 bin_PROGRAMS =

@@ -629,6 +629,8 @@ pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 			faux_list_del(pline->exprs, last_expr_node);
 	}
 
+	flags = flags; // Happy compiler
+
 	return pline;
 }
 
