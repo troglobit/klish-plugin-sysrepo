@@ -707,19 +707,13 @@ err:
 int srp_commit(kcontext_t *context)
 {
 	int ret = -1;
-	faux_argv_t *args = NULL;
-	pline_t *pline = NULL;
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
-	pexpr_t *expr = NULL;
-	size_t err_num = 0;
-	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
-		fprintf(stderr, "Can't connect to candidate data store\n");
+		fprintf(stderr, "Can't connect to data repository\n");
 		return -1;
 	}
 
@@ -750,6 +744,37 @@ int srp_commit(kcontext_t *context)
 	}
 	if (sr_copy_config(sess, NULL, SR_DS_RUNNING, 0) != SR_ERR_OK) {
 		fprintf(stderr, "Can't store data to startup-config\n");
+		goto err;
+	}
+
+	ret = 0;
+err:
+	sr_disconnect(conn);
+
+	return ret;
+}
+
+
+int srp_rollback(kcontext_t *context)
+{
+	int ret = -1;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
+		fprintf(stderr, "Can't connect to data repository\n");
+		return -1;
+	}
+
+	// Copy running-config to candidate config
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		fprintf(stderr, "Can't connect to candidate data store\n");
+		goto err;
+	}
+	if (sr_copy_config(sess, NULL, SR_DS_RUNNING, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Can't rollback to running-config\n");
 		goto err;
 	}
 

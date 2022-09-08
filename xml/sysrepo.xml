@@ -163,6 +163,11 @@
 		<ACTION sym="srp_commit@sysrepo"/>
 	</ENTRY>
 
+	<ENTRY name="rollback" help="Rollback to running-config" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="srp_rollback@sysrepo"/>
+	</ENTRY>
+
 </ENTRY>
 
 </KLISH>

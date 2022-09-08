@@ -70,6 +70,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 		KSYM_USERDEFINED_PERMANENT, KSYM_SYNC));
 	kplugin_add_syms(plugin, ksym_new("srp_insert", srp_insert));
 	kplugin_add_syms(plugin, ksym_new("srp_commit", srp_commit));
+	kplugin_add_syms(plugin, ksym_new("srp_rollback", srp_rollback));
 
 	return 0;
 }
