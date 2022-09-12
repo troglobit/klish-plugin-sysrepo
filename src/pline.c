@@ -325,8 +325,31 @@ static const char *identityref_prefix(struct lysc_type_identityref *type,
 }
 
 
+static size_t num_of_keys(const struct lysc_node *node)
+{
+	const struct lysc_node *iter = NULL;
+	size_t num = 0;
+
+	assert(node);
+	if (!node)
+		return 0;
+	if (!(node->nodetype & LYS_LIST))
+		return 0;
+
+	LY_LIST_FOR(lysc_node_child(node), iter) {
+		if (!(iter->nodetype & LYS_LEAF))
+			continue;
+		if (!(iter->flags & LYS_KEY))
+			continue;
+		num++;
+	}
+
+	return num;
+}
+
+
 static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
-	pline_t *pline)
+	pline_t *pline, uint32_t flags)
 {
 	faux_argv_node_t *arg = faux_argv_iter(argv);
 	const struct lysc_node *node = NULL;
@@ -417,6 +440,18 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			// Next element
 			if (!is_rollback) {
 				bool_t break_upper_loop = BOOL_FALSE;
+				bool_t with_stmt = BOOL_FALSE;
+				size_t keys_num = 0;
+
+				// Parse keys's statement or not
+				keys_num = num_of_keys(node);
+				if (keys_num > 1) {
+					if (flags & PPARSE_MULTI_KEYS_W_STMT)
+						with_stmt = BOOL_TRUE;
+				} else {
+					if (flags & PPARSE_SINGLE_KEY_W_STMT)
+						with_stmt = BOOL_TRUE;
+				}
 
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;
@@ -428,6 +463,23 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					if (!(iter->flags & LYS_KEY))
 						continue;
 					assert (leaf->type->basetype != LY_TYPE_EMPTY);
+
+					// Parse statement if necessary
+					if (with_stmt) {
+						// Completion
+						if (!str) {
+							pline_add_compl(pline,
+								PCOMPL_NODE, iter, NULL);
+							break_upper_loop = BOOL_TRUE;
+							break;
+						}
+
+						pexpr->args_num++;
+						faux_argv_each(&arg);
+						str = (const char *)faux_argv_current(arg);
+
+						pexpr->pat = PAT_LIST_KEY_INCOMPLETED;
+					}
 
 					// Completion
 					if (!str) {
@@ -615,7 +667,7 @@ pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 			continue;
 		if (!module->compiled->data)
 			continue;
-		if (pline_parse_module(module, argv, pline))
+		if (pline_parse_module(module, argv, pline, flags))
 			break; // Found
 	}
 

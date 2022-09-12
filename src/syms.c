@@ -78,7 +78,7 @@ static int srp_compl_or_help(kcontext_t *context, bool_t help)
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	entry_name = kentry_name(kcontext_candidate_entry(context));
 	args = param2argv(cur_path, kcontext_parent_pargv(context), entry_name);
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 	pline_print_completions(pline, help);
 	pline_free(pline);
@@ -152,7 +152,7 @@ static int srp_check_type(kcontext_t *context,
 	args = param2argv(cur_path, kcontext_parent_pargv(context), entry_name);
 	if (value)
 		faux_argv_add(args, value);
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 
 	if (pline->invalid)
@@ -212,7 +212,7 @@ static faux_argv_t *assemble_insert_to(sr_session_ctx_t *sess, const kpargv_t *p
 	assert(sess);
 
 	args = param2argv(cur_path, pargv, "from_path");
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	expr = pline_current_expr(pline);
 	for (i = 0; i < (expr->args_num - expr->list_pos); i++) {
 		faux_argv_node_t *iter = faux_argv_iterr(args);
@@ -256,7 +256,7 @@ int srp_PLINE_INSERT_TO(kcontext_t *context)
 	value = kcontext_candidate_value(context);
 	args = assemble_insert_to(sess, kcontext_parent_pargv(context),
 		cur_path, value);
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 
 	if (pline->invalid)
@@ -299,7 +299,7 @@ static int srp_compl_or_help_insert_to(kcontext_t *context, bool_t help)
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	args = assemble_insert_to(sess, kcontext_parent_pargv(context),
 		cur_path, NULL);
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 	pline_print_completions(pline, help);
 	pline_free(pline);
@@ -347,7 +347,7 @@ int srp_set(kcontext_t *context)
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 
 	if (pline->invalid) {
@@ -413,7 +413,7 @@ int srp_del(kcontext_t *context)
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 
 	if (pline->invalid) {
@@ -473,7 +473,7 @@ int srp_edit(kcontext_t *context)
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 
 	if (pline->invalid) {
 		fprintf(stderr, "Invalid 'edit' request\n");
@@ -559,7 +559,7 @@ int srp_up(kcontext_t *context)
 
 		iter = faux_argv_iterr(cur_path);
 		faux_argv_del(cur_path, iter);
-		pline = pline_parse(sess, cur_path, 0);
+		pline = pline_parse(sess, cur_path, SRP_DEFAULT_PARSE_OPTS);
 		if (pline->invalid) {
 			pline_free(pline);
 			continue;
@@ -625,7 +625,7 @@ int srp_insert(kcontext_t *context)
 
 	// 'from' argument
 	insert_from = param2argv(cur_path, pargv, "from_path");
-	pline = pline_parse(sess, insert_from, 0);
+	pline = pline_parse(sess, insert_from, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(insert_from);
 
 	if (pline->invalid) {
@@ -662,7 +662,7 @@ int srp_insert(kcontext_t *context)
 	// 'to' argument
 	if ((SR_MOVE_BEFORE == position) || (SR_MOVE_AFTER == position)) {
 		insert_to = assemble_insert_to(sess, pargv, cur_path, NULL);
-		pline_to = pline_parse(sess, insert_to, 0);
+		pline_to = pline_parse(sess, insert_to, SRP_DEFAULT_PARSE_OPTS);
 		faux_argv_free(insert_to);
 
 		if (pline_to->invalid) {
@@ -813,7 +813,7 @@ int srp_show(kcontext_t *context)
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 
 	if (pline->invalid) {
@@ -887,7 +887,7 @@ int srp_deactivate(kcontext_t *context)
 	plugin = kcontext_plugin(context);
 	cur_path = (faux_argv_t *)kplugin_udata(plugin);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
-	pline = pline_parse(sess, args, 0);
+	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
 
 	if (pline->invalid) {

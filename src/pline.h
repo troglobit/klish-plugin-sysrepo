@@ -109,6 +109,13 @@ typedef struct pline_s {
 } pline_t;
 
 
+// Parse options
+typedef enum {
+	PPARSE_SINGLE_KEY_W_STMT = 0x01,
+	PPARSE_MULTI_KEYS_W_STMT = 0x02,
+} pparse_flags_e;
+
+
 C_DECL_BEGIN
 
 pline_t *pline_new(sr_session_ctx_t *sess);

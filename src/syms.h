@@ -8,8 +8,14 @@
 #include <faux/faux.h>
 #include <klish/kcontext_base.h>
 
+#include "pline.h"
+
 // Repository to edit with srp commands
 #define SRP_REPO_EDIT SR_DS_CANDIDATE
+
+// Defaut parse options
+#define SRP_DEFAULT_PARSE_OPTS (PPARSE_MULTI_KEYS_W_STMT)
+
 
 C_DECL_BEGIN
 

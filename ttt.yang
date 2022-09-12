@@ -65,4 +65,27 @@ module ttt {
 
   }
 
+
+  list rule {
+    key "from to";
+
+    leaf from {
+      type string;
+    }
+    leaf to {
+      type string;
+    }
+
+    leaf comment {
+      type string;
+    }
+
+    leaf-list multi {
+      ordered-by user;
+      type string;
+    }
+
+  }
+
+
 }
