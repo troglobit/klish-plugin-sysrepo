@@ -20,8 +20,6 @@
 #include "sr_copypaste.h"
 #include "pline.h"
 
-#define NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
-
 
 static pexpr_t *pexpr_new(void)
 {
@@ -179,7 +177,7 @@ static void pline_add_compl_subtree(pline_t *pline, const struct lys_module *mod
 		subtree = module->compiled->data;
 
 	LY_LIST_FOR(subtree, iter) {
-		if (!(iter->nodetype & NODETYPE_CONF))
+		if (!(iter->nodetype & SRP_NODETYPE_CONF))
 			continue;
 		if (!(iter->flags & LYS_CONFIG_W))
 			continue;
@@ -273,7 +271,7 @@ static const struct lysc_node *find_child(const struct lysc_node *node,
 		return NULL;
 
 	LY_LIST_FOR(node, iter) {
-		if (!(iter->nodetype & NODETYPE_CONF))
+		if (!(iter->nodetype & SRP_NODETYPE_CONF))
 			continue;
 		if (!(iter->flags & LYS_CONFIG_W))
 			continue;
@@ -325,7 +323,7 @@ static const char *identityref_prefix(struct lysc_type_identityref *type,
 }
 
 
-static size_t num_of_keys(const struct lysc_node *node)
+size_t list_num_of_keys(const struct lysc_node *node)
 {
 	const struct lysc_node *iter = NULL;
 	size_t num = 0;
@@ -345,6 +343,25 @@ static size_t num_of_keys(const struct lysc_node *node)
 	}
 
 	return num;
+}
+
+
+bool_t list_key_with_stmt(const struct lysc_node *node, uint32_t flags)
+{
+	bool_t with_stmt = BOOL_FALSE;
+	size_t keys_num = 0;
+
+	// Parse keys's statement or not
+	keys_num = list_num_of_keys(node);
+	if (keys_num > 1) {
+		if (flags & PPARSE_MULTI_KEYS_W_STMT)
+			with_stmt = BOOL_TRUE;
+	} else {
+		if (flags & PPARSE_SINGLE_KEY_W_STMT)
+			with_stmt = BOOL_TRUE;
+	}
+
+	return with_stmt;
 }
 
 
@@ -440,18 +457,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			// Next element
 			if (!is_rollback) {
 				bool_t break_upper_loop = BOOL_FALSE;
-				bool_t with_stmt = BOOL_FALSE;
-				size_t keys_num = 0;
-
-				// Parse keys's statement or not
-				keys_num = num_of_keys(node);
-				if (keys_num > 1) {
-					if (flags & PPARSE_MULTI_KEYS_W_STMT)
-						with_stmt = BOOL_TRUE;
-				} else {
-					if (flags & PPARSE_SINGLE_KEY_W_STMT)
-						with_stmt = BOOL_TRUE;
-				}
+				bool_t with_stmt = list_key_with_stmt(node, flags);
 
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;

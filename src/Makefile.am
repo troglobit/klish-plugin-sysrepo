@@ -15,4 +15,6 @@ kplugin_sysrepo_la_SOURCES += \
 	src/sr_copypaste.h \
 	src/sr_copypaste.c \
 	src/pline.h \
-	src/pline.c
+	src/pline.c \
+	src/show.h \
+	src/show.c

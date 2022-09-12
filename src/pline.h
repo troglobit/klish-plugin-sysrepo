@@ -11,6 +11,7 @@
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
+
 // Type of positional pline argument
 // P(line) A(rg) T(ype)
 typedef enum {
@@ -116,6 +117,9 @@ typedef enum {
 } pparse_flags_e;
 
 
+#define SRP_NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
+
+
 C_DECL_BEGIN
 
 pline_t *pline_new(sr_session_ctx_t *sess);
@@ -126,6 +130,9 @@ void pline_free(pline_t *pline);
 
 void pline_debug(pline_t *pline);
 void pline_print_completions(const pline_t *pline, bool_t help);
+
+size_t num_of_keys(const struct lysc_node *node);
+bool_t list_key_with_stmt(const struct lysc_node *node, uint32_t flags);
 
 C_DECL_END
 

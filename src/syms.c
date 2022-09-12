@@ -22,6 +22,7 @@
 #include "sr_copypaste.h"
 #include "pline.h"
 #include "syms.h"
+#include "show.h"
 
 
 static faux_argv_t *param2argv(const faux_argv_t *cur_path,
@@ -787,7 +788,7 @@ err:
 }
 
 
-int srp_show(kcontext_t *context)
+int srp_show_xml(kcontext_t *context)
 {
 	int ret = -1;
 	faux_argv_t *args = NULL;
@@ -852,6 +853,71 @@ int srp_show(kcontext_t *context)
 		printf("META\n");
 
 	sr_release_data(data);
+
+	ret = 0;
+err:
+	pline_free(pline);
+	sr_disconnect(conn);
+
+	return ret;
+}
+
+
+int srp_show(kcontext_t *context)
+{
+	int ret = -1;
+	faux_argv_t *args = NULL;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	pexpr_t *expr = NULL;
+	faux_argv_t *cur_path = NULL;
+	kplugin_t *plugin = NULL;
+	char *xpath = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	plugin = kcontext_plugin(context);
+	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+
+	if (kpargv_find(kcontext_pargv(context), "path") || cur_path) {
+		args = param2argv(cur_path, kcontext_pargv(context), "path");
+		pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
+		faux_argv_free(args);
+
+		if (pline->invalid) {
+			fprintf(stderr, "Invalid 'show' request\n");
+			goto err;
+		}
+
+		if (faux_list_len(pline->exprs) > 1) {
+			fprintf(stderr, "Can't process more than one object\n");
+			goto err;
+		}
+
+		if (!(expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs)))) {
+			fprintf(stderr, "Can't get expression\n");
+			goto err;
+		}
+		if (!(expr->pat & PT_EDIT)) {
+			fprintf(stderr, "Illegal expression for 'show' operation\n");
+			goto err;
+		}
+		if (!expr->xpath) {
+			fprintf(stderr, "Empty expression for 'show' operation\n");
+			goto err;
+		}
+		xpath = expr->xpath;
+	}
+
+	show_xpath(sess, xpath, SRP_DEFAULT_PARSE_OPTS);
 
 	ret = 0;
 err:
