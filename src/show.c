@@ -89,7 +89,11 @@ static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
 
 static void show_leaflist(const struct lyd_node *node, size_t level, uint32_t flags)
 {
+	if (!node)
+		return;
 
+	printf("%*s%s %s\n", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name,
+		lyd_get_value(node));
 }
 
 
