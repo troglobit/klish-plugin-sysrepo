@@ -136,15 +136,112 @@ static void show_node(const struct lyd_node *node, size_t level, uint32_t flags)
 }
 
 
+static void show_sorted_list(faux_list_t *list, size_t level, uint32_t flags)
+{
+	faux_list_node_t *iter = NULL;
+	const struct lyd_node *lyd = NULL;
+
+	if (!list)
+		return;
+
+	iter = faux_list_head(list);
+	while ((lyd = (const struct lyd_node *)faux_list_each(&iter)))
+		show_node(lyd, level, flags);
+}
+
+
+static char *list_keys_str(const struct lyd_node *node)
+{
+	char *keys = NULL;
+	const struct lyd_node *iter = NULL;
+
+	if (!node)
+		return NULL;
+	if (node->schema->nodetype != LYS_LIST)
+		return NULL;
+
+	LY_LIST_FOR(lyd_child(node), iter) {
+		if (!(iter->schema->nodetype & LYS_LEAF))
+			continue;
+		if (!(iter->schema->flags & LYS_KEY))
+			continue;
+		if (keys)
+			faux_str_cat(&keys, " ");
+		faux_str_cat(&keys, lyd_get_value(iter));
+	}
+
+	return keys;
+}
+
+
+static int list_compare(const void *first, const void *second)
+{
+	int rc = 0;
+	const struct lyd_node *f = (const struct lyd_node *)first;
+	const struct lyd_node *s = (const struct lyd_node *)second;
+	char *f_keys = list_keys_str(f);
+	char *s_keys = list_keys_str(s);
+
+	rc = faux_str_numcmp(f_keys, s_keys);
+	faux_str_free(f_keys);
+	faux_str_free(s_keys);
+
+	return rc;
+}
+
+
+static int leaflist_compare(const void *first, const void *second)
+{
+	const struct lyd_node *f = (const struct lyd_node *)first;
+	const struct lyd_node *s = (const struct lyd_node *)second;
+
+	return faux_str_numcmp(lyd_get_value(f), lyd_get_value(s));
+}
+
+
 static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32_t flags)
 {
 	const struct lyd_node *iter = NULL;
+	faux_list_t *list = NULL;
+	const struct lysc_node *saved_lysc = NULL;
 
 	if(!nodes_list)
 		return;
 
 	LY_LIST_FOR(nodes_list, iter) {
+
+		if (saved_lysc) {
+			if (saved_lysc == iter->schema) {
+				faux_list_add(list, (void *)iter);
+				continue;
+			}
+			show_sorted_list(list, level, flags);
+			faux_list_free(list);
+			list = NULL;
+			saved_lysc = NULL;
+		}
+
+		if (((LYS_LIST == iter->schema->nodetype) ||
+			(LYS_LEAFLIST == iter->schema->nodetype)) &&
+			(iter->schema->flags & LYS_ORDBY_SYSTEM)) {
+			saved_lysc = iter->schema;
+			if (LYS_LIST == iter->schema->nodetype) {
+				list = faux_list_new(FAUX_LIST_SORTED, FAUX_LIST_UNIQUE,
+					list_compare, NULL, NULL);
+			} else { // LEAFLIST
+				list = faux_list_new(FAUX_LIST_SORTED, FAUX_LIST_UNIQUE,
+					leaflist_compare, NULL, NULL);
+			}
+			faux_list_add(list, (void *)iter);
+			continue;
+		}
+
 		show_node(iter, level, flags);
+	}
+
+	if (list) {
+		show_sorted_list(list, level, flags);
+		faux_list_free(list);
 	}
 }
 
