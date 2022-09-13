@@ -18,7 +18,9 @@
 #include "pline.h"
 #include "show.h"
 
-#define LEVEL_SPACES_NUM 2
+#define LEVEL_SPACES_NUM 4
+
+#define JUN(flags) (flags & PPARSE_JUNIPER_SHOW)
 
 
 static void show_container(const struct lyd_node *node, size_t level, uint32_t flags);
@@ -29,14 +31,44 @@ static void show_node(const struct lyd_node *node, size_t level, uint32_t flags)
 static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32_t flags);
 
 
+static const char *get_value(const struct lyd_node *node)
+{
+	const struct lysc_node *schema = NULL;
+	const struct lysc_type *type = NULL;
+	const struct lyd_value *value = NULL;
+
+	if (!node)
+		return NULL;
+
+	schema = node->schema;
+	if (!(schema->nodetype & (LYS_LEAF | LYS_LEAFLIST)))
+		return NULL;
+
+	if (schema->nodetype & LYS_LEAF)
+		type = ((const struct lysc_node_leaf *)schema)->type;
+	else
+		type = ((const struct lysc_node_leaflist *)schema)->type;
+
+	if (type->basetype != LY_TYPE_IDENT)
+		return lyd_get_value(node);
+
+	// Identity
+	value = &((const struct lyd_node_term *)node)->value;
+
+	return value->ident->name;
+}
+
+
 static void show_container(const struct lyd_node *node, size_t level, uint32_t flags)
 {
 	if (!node)
 		return;
 
-	printf("%*s%s\n", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
-
+	printf("%*s%s%s\n", (int)(level * LEVEL_SPACES_NUM), "",
+		node->schema->name, JUN(flags) ? " {" : "");
 	show_subtree(lyd_child(node), level + 1, flags);
+	if (JUN(flags))
+		printf("%*s%s\n", (int)(level * LEVEL_SPACES_NUM), "", "}");
 }
 
 
@@ -60,11 +92,12 @@ static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
 			continue;
 		if (with_stmt)
 			printf(" %s", iter->schema->name);
-		printf(" %s", lyd_get_value(iter));
+		printf(" %s", get_value(iter));
 	}
-	printf("\n");
-
+	printf("%s\n", JUN(flags) ? " {" : "");
 	show_subtree(lyd_child(node), level + 1, flags);
+	if (JUN(flags))
+		printf("%*s%s\n", (int)(level * LEVEL_SPACES_NUM), "", "}");
 }
 
 
@@ -81,9 +114,9 @@ static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
 
 	leaf = (struct lysc_node_leaf *)node->schema;
 	if (leaf->type->basetype != LY_TYPE_EMPTY)
-		printf(" %s", lyd_get_value(node));
+		printf(" %s", get_value(node));
 
-	printf("\n");
+	printf("%s\n", JUN(flags) ? ";" : "");
 }
 
 
@@ -92,8 +125,8 @@ static void show_leaflist(const struct lyd_node *node, size_t level, uint32_t fl
 	if (!node)
 		return;
 
-	printf("%*s%s %s\n", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name,
-		lyd_get_value(node));
+	printf("%*s%s %s%s\n", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name,
+		get_value(node), JUN(flags) ? ";" : "");
 }
 
 
@@ -167,7 +200,7 @@ static char *list_keys_str(const struct lyd_node *node)
 			continue;
 		if (keys)
 			faux_str_cat(&keys, " ");
-		faux_str_cat(&keys, lyd_get_value(iter));
+		faux_str_cat(&keys, get_value(iter));
 	}
 
 	return keys;
@@ -195,7 +228,7 @@ static int leaflist_compare(const void *first, const void *second)
 	const struct lyd_node *f = (const struct lyd_node *)first;
 	const struct lyd_node *s = (const struct lyd_node *)second;
 
-	return faux_str_numcmp(lyd_get_value(f), lyd_get_value(s));
+	return faux_str_numcmp(get_value(f), get_value(s));
 }
 
 

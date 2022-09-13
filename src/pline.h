@@ -112,8 +112,9 @@ typedef struct pline_s {
 
 // Parse options
 typedef enum {
-	PPARSE_SINGLE_KEY_W_STMT = 0x01,
-	PPARSE_MULTI_KEYS_W_STMT = 0x02,
+	PPARSE_SINGLE_KEY_W_STMT	= 0x00000001,
+	PPARSE_MULTI_KEYS_W_STMT	= 0x00000002,
+	PPARSE_JUNIPER_SHOW		= 0x00010000,
 } pparse_flags_e;
 
 
