@@ -176,6 +176,7 @@
 		<ACTION sym="srp_show@sysrepo"/>
 	</ENTRY>
 
+<!--
 	<ENTRY name="deactivate" help="Deactivate statement" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ENTRY name="path" max="100">
@@ -183,6 +184,7 @@
 		</ENTRY>
 		<ACTION sym="srp_deactivate@sysrepo"/>
 	</ENTRY>
+-->
 
 </ENTRY>
 
