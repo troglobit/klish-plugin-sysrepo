@@ -442,6 +442,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;
+					char *escaped = NULL;
 					struct lysc_node_leaf *leaf =
 						(struct lysc_node_leaf *)iter;
 
@@ -483,8 +484,10 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 						break;
 					}
 
-					tmp = faux_str_sprintf("[%s='%s']",
-						leaf->name, str);
+					escaped = faux_str_c_esc(str);
+					tmp = faux_str_sprintf("[%s=\"%s\"]",
+						leaf->name, escaped);
+					faux_str_free(escaped);
 					faux_str_cat(&pexpr->xpath, tmp);
 					faux_str_cat(&pexpr->last_keys, tmp);
 					faux_str_free(tmp);

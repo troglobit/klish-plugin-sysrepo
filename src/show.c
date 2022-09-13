@@ -31,11 +31,14 @@ static void show_node(const struct lyd_node *node, size_t level, uint32_t flags)
 static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32_t flags);
 
 
-static const char *get_value(const struct lyd_node *node)
+static char *get_value(const struct lyd_node *node)
 {
 	const struct lysc_node *schema = NULL;
 	const struct lysc_type *type = NULL;
-	const struct lyd_value *value = NULL;
+	const char *origin_value = NULL;
+	char *space = NULL;
+	char *escaped = NULL;
+	char *result = NULL;
 
 	if (!node)
 		return NULL;
@@ -49,13 +52,26 @@ static const char *get_value(const struct lyd_node *node)
 	else
 		type = ((const struct lysc_node_leaflist *)schema)->type;
 
-	if (type->basetype != LY_TYPE_IDENT)
-		return lyd_get_value(node);
+	if (type->basetype != LY_TYPE_IDENT) {
+		origin_value = lyd_get_value(node);
+	} else {
+		// Identity
+		const struct lyd_value *value = NULL;
+		value = &((const struct lyd_node_term *)node)->value;
+		origin_value = value->ident->name;
+	}
 
-	// Identity
-	value = &((const struct lyd_node_term *)node)->value;
+	escaped = faux_str_c_esc(origin_value);
+	// String with space must have quotes
+	space = strchr(origin_value, ' ');
+	if (space) {
+		result = faux_str_sprintf("\"%s\"", escaped);
+		faux_str_free(escaped);
+	} else {
+		result = escaped;
+	}
 
-	return value->ident->name;
+	return result;
 }
 
 
@@ -84,6 +100,8 @@ static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
 	printf("%*s%s", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
 
 	LY_LIST_FOR(lyd_child(node), iter) {
+		char *value = NULL;
+
 		if (!(iter->schema->nodetype & LYS_LEAF))
 			continue;
 		if (!(iter->schema->flags & LYS_KEY))
@@ -91,7 +109,9 @@ static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
 		if ((first_key && (flags & PPARSE_FIRST_KEY_W_STMT)) ||
 			(!first_key && (flags & PPARSE_MULTI_KEYS_W_STMT)))
 			printf(" %s", iter->schema->name);
-		printf(" %s", get_value(iter));
+		value = get_value(iter);
+		printf(" %s", value);
+		faux_str_free(value);
 		first_key = BOOL_FALSE;
 	}
 	printf("%s\n", JUN(flags) ? " {" : "");
@@ -113,8 +133,11 @@ static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
 	printf("%*s%s", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
 
 	leaf = (struct lysc_node_leaf *)node->schema;
-	if (leaf->type->basetype != LY_TYPE_EMPTY)
-		printf(" %s", get_value(node));
+	if (leaf->type->basetype != LY_TYPE_EMPTY) {
+		char *value = get_value(node);
+		printf(" %s", value);
+		faux_str_free(value);
+	}
 
 	printf("%s\n", JUN(flags) ? ";" : "");
 }
@@ -122,11 +145,15 @@ static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
 
 static void show_leaflist(const struct lyd_node *node, size_t level, uint32_t flags)
 {
+	char *value = NULL;
+
 	if (!node)
 		return;
 
+	value = get_value(node);
 	printf("%*s%s %s%s\n", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name,
-		get_value(node), JUN(flags) ? ";" : "");
+		value, JUN(flags) ? ";" : "");
+	faux_str_free(value);
 }
 
 
@@ -200,7 +227,7 @@ static char *list_keys_str(const struct lyd_node *node)
 			continue;
 		if (keys)
 			faux_str_cat(&keys, " ");
-		faux_str_cat(&keys, get_value(iter));
+		faux_str_cat(&keys, lyd_get_value(iter));
 	}
 
 	return keys;
@@ -228,7 +255,7 @@ static int leaflist_compare(const void *first, const void *second)
 	const struct lyd_node *f = (const struct lyd_node *)first;
 	const struct lyd_node *s = (const struct lyd_node *)second;
 
-	return faux_str_numcmp(get_value(f), get_value(s));
+	return faux_str_numcmp(lyd_get_value(f), lyd_get_value(s));
 }
 
 
