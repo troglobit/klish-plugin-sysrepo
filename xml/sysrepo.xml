@@ -65,6 +65,14 @@
 		<ACTION sym="nav">replace sysrepo</ACTION>
 	</ENTRY>
 
+	<ENTRY name="show" help="Show" mode="switch">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="configuration" help="Show running-config" mode="sequence">
+			<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
+		</ENTRY>
+		<ACTION sym="srp_show_running@sysrepo"/>
+	</ENTRY>
+
 </ENTRY>
 
 

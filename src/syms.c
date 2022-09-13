@@ -863,7 +863,7 @@ err:
 }
 
 
-int srp_show(kcontext_t *context)
+static int show(kcontext_t *context, sr_datastore_t ds)
 {
 	int ret = -1;
 	faux_argv_t *args = NULL;
@@ -879,7 +879,7 @@ int srp_show(kcontext_t *context)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+	if (sr_session_start(conn, ds, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -925,6 +925,31 @@ err:
 	sr_disconnect(conn);
 
 	return ret;
+}
+
+
+int srp_show(kcontext_t *context)
+{
+	return show(context, SRP_REPO_EDIT);
+}
+
+
+int srp_show_running(kcontext_t *context)
+{
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	show_xpath(sess, NULL, SRP_DEFAULT_PARSE_OPTS);
+	sr_disconnect(conn);
+
+	return 0;
 }
 
 

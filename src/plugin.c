@@ -72,6 +72,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	kplugin_add_syms(plugin, ksym_new("srp_commit", srp_commit));
 	kplugin_add_syms(plugin, ksym_new("srp_rollback", srp_rollback));
 	kplugin_add_syms(plugin, ksym_new("srp_show", srp_show));
+	kplugin_add_syms(plugin, ksym_new("srp_show_running", srp_show_running));
 	kplugin_add_syms(plugin, ksym_new("srp_deactivate", srp_deactivate));
 
 	return 0;
