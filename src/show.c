@@ -75,24 +75,24 @@ static void show_container(const struct lyd_node *node, size_t level, uint32_t f
 static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
 {
 	size_t keys_num = 0;
-	bool_t with_stmt = BOOL_FALSE;
 	const struct lyd_node *iter = NULL;
+	bool_t first_key = BOOL_TRUE;
 
 	if (!node)
 		return;
 
 	printf("%*s%s", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
 
-	with_stmt = list_key_with_stmt(node->schema, flags);
-
 	LY_LIST_FOR(lyd_child(node), iter) {
 		if (!(iter->schema->nodetype & LYS_LEAF))
 			continue;
 		if (!(iter->schema->flags & LYS_KEY))
 			continue;
-		if (with_stmt)
+		if ((first_key && (flags & PPARSE_FIRST_KEY_W_STMT)) ||
+			(!first_key && (flags & PPARSE_MULTI_KEYS_W_STMT)))
 			printf(" %s", iter->schema->name);
 		printf(" %s", get_value(iter));
+		first_key = BOOL_FALSE;
 	}
 	printf("%s\n", JUN(flags) ? " {" : "");
 	show_subtree(lyd_child(node), level + 1, flags);

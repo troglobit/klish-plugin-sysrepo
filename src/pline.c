@@ -346,25 +346,6 @@ size_t list_num_of_keys(const struct lysc_node *node)
 }
 
 
-bool_t list_key_with_stmt(const struct lysc_node *node, uint32_t flags)
-{
-	bool_t with_stmt = BOOL_FALSE;
-	size_t keys_num = 0;
-
-	// Parse keys's statement or not
-	keys_num = list_num_of_keys(node);
-	if (keys_num > 1) {
-		if (flags & PPARSE_MULTI_KEYS_W_STMT)
-			with_stmt = BOOL_TRUE;
-	} else {
-		if (flags & PPARSE_SINGLE_KEY_W_STMT)
-			with_stmt = BOOL_TRUE;
-	}
-
-	return with_stmt;
-}
-
-
 static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 	pline_t *pline, uint32_t flags)
 {
@@ -457,7 +438,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			// Next element
 			if (!is_rollback) {
 				bool_t break_upper_loop = BOOL_FALSE;
-				bool_t with_stmt = list_key_with_stmt(node, flags);
+				bool_t first_key = BOOL_TRUE;
 
 				LY_LIST_FOR(lysc_node_child(node), iter) {
 					char *tmp = NULL;
@@ -471,7 +452,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					assert (leaf->type->basetype != LY_TYPE_EMPTY);
 
 					// Parse statement if necessary
-					if (with_stmt) {
+					if ((first_key && (flags & PPARSE_FIRST_KEY_W_STMT)) ||
+						(!first_key && (flags & PPARSE_MULTI_KEYS_W_STMT))) {
 						// Completion
 						if (!str) {
 							pline_add_compl(pline,
@@ -486,6 +468,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 						pexpr->pat = PAT_LIST_KEY_INCOMPLETED;
 					}
+					first_key = BOOL_FALSE;
 
 					// Completion
 					if (!str) {

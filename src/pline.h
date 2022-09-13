@@ -112,7 +112,7 @@ typedef struct pline_s {
 
 // Parse options
 typedef enum {
-	PPARSE_SINGLE_KEY_W_STMT	= 0x00000001,
+	PPARSE_FIRST_KEY_W_STMT		= 0x00000001,
 	PPARSE_MULTI_KEYS_W_STMT	= 0x00000002,
 	PPARSE_JUNIPER_SHOW		= 0x00010000,
 } pparse_flags_e;
@@ -133,7 +133,6 @@ void pline_debug(pline_t *pline);
 void pline_print_completions(const pline_t *pline, bool_t help);
 
 size_t num_of_keys(const struct lysc_node *node);
-bool_t list_key_with_stmt(const struct lysc_node *node, uint32_t flags);
 
 C_DECL_END
 
