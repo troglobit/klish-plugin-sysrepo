@@ -27,6 +27,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	int err = SR_ERR_OK;
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
+	srp_udata_t *udata = NULL;
 
 	assert(context);
 	plugin = kcontext_plugin(context);
@@ -75,13 +76,69 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	kplugin_add_syms(plugin, ksym_new("srp_show_running", srp_show_running));
 	kplugin_add_syms(plugin, ksym_new("srp_deactivate", srp_deactivate));
 
+	// User-data initialization
+	udata = faux_zmalloc(sizeof(*udata));
+	assert(udata);
+	udata->path = NULL;
+	udata->flags = 0;
+	kplugin_set_udata(plugin, udata);
+
 	return 0;
 }
 
 
 int kplugin_sysrepo_fini(kcontext_t *context)
 {
-	context = context; // Happy compiler
+	srp_udata_t *udata = NULL;
+
+	assert(context);
+
+	// Free plugin's user-data
+	udata = (srp_udata_t *)kcontext_udata(context);
+	assert(udata);
+	if (udata->path)
+		faux_argv_free(udata->path);
+	faux_free(udata);
 
 	return 0;
+}
+
+
+uint32_t srp_udata_flags(kcontext_t *context)
+{
+	srp_udata_t *udata = NULL;
+
+	assert(context);
+
+	udata = (srp_udata_t *)kcontext_udata(context);
+	assert(udata);
+
+	return udata->flags;
+}
+
+
+faux_argv_t *srp_udata_path(kcontext_t *context)
+{
+	srp_udata_t *udata = NULL;
+
+	assert(context);
+
+	udata = (srp_udata_t *)kcontext_udata(context);
+	assert(udata);
+
+	return udata->path;
+}
+
+
+void srp_udata_set_path(kcontext_t *context, faux_argv_t *path)
+{
+	srp_udata_t *udata = NULL;
+
+	assert(context);
+
+	udata = (srp_udata_t *)kcontext_udata(context);
+	assert(udata);
+	if (udata->path)
+		faux_argv_free(udata->path);
+	udata->path = path;
 }

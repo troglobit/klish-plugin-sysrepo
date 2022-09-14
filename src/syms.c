@@ -62,7 +62,6 @@ static int srp_compl_or_help(kcontext_t *context, bool_t help)
 	sr_session_ctx_t *sess = NULL;
 	const char *entry_name = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -73,8 +72,7 @@ static int srp_compl_or_help(kcontext_t *context, bool_t help)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	entry_name = kentry_name(kcontext_candidate_entry(context));
 	args = param2argv(cur_path, kcontext_parent_pargv(context), entry_name);
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
@@ -103,13 +101,11 @@ int srp_help(kcontext_t *context)
 int srp_prompt_edit_path(kcontext_t *context)
 {
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 	char *path = NULL;
 
 	assert(context);
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	if (cur_path)
 		path = faux_argv_line(cur_path);
 	printf("[edit%s%s]\n", path ? " " : "", path ? path : "");
@@ -133,7 +129,6 @@ static int srp_check_type(kcontext_t *context,
 	pexpr_t *expr = NULL;
 	size_t expr_num = 0;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -144,8 +139,7 @@ static int srp_check_type(kcontext_t *context,
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	entry_name = kentry_name(kcontext_candidate_entry(context));
 	value = kcontext_candidate_value(context);
 	args = param2argv(cur_path, kcontext_parent_pargv(context), entry_name);
@@ -239,7 +233,6 @@ int srp_PLINE_INSERT_TO(kcontext_t *context)
 	pexpr_t *expr = NULL;
 	size_t expr_num = 0;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -250,8 +243,7 @@ int srp_PLINE_INSERT_TO(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	value = kcontext_candidate_value(context);
 	args = assemble_insert_to(sess, kcontext_parent_pargv(context),
 		cur_path, value);
@@ -283,7 +275,6 @@ static int srp_compl_or_help_insert_to(kcontext_t *context, bool_t help)
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -294,8 +285,7 @@ static int srp_compl_or_help_insert_to(kcontext_t *context, bool_t help)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	args = assemble_insert_to(sess, kcontext_parent_pargv(context),
 		cur_path, NULL);
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
@@ -332,7 +322,6 @@ int srp_set(kcontext_t *context)
 	pexpr_t *expr = NULL;
 	size_t err_num = 0;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -343,8 +332,7 @@ int srp_set(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
@@ -398,7 +386,6 @@ int srp_del(kcontext_t *context)
 	pexpr_t *expr = NULL;
 	size_t err_num = 0;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -409,8 +396,7 @@ int srp_del(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
@@ -458,7 +444,6 @@ int srp_edit(kcontext_t *context)
 	pexpr_t *expr = NULL;
 	size_t err_num = 0;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 
 	assert(context);
 
@@ -469,8 +454,7 @@ int srp_edit(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 
@@ -498,8 +482,7 @@ int srp_edit(kcontext_t *context)
 	sr_apply_changes(sess, 0);
 
 	// Set new current path
-	faux_argv_free(cur_path);
-	kplugin_set_udata(plugin, args);
+	srp_udata_set_path(context, args);
 
 	ret = 0;
 err:
@@ -514,15 +497,9 @@ err:
 
 int srp_top(kcontext_t *context)
 {
-	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
-
 	assert(context);
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
-	faux_argv_free(cur_path);
-	kplugin_set_udata(plugin, NULL);
+	srp_udata_set_path(context, NULL);
 
 	return 0;
 }
@@ -533,13 +510,11 @@ int srp_up(kcontext_t *context)
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 	faux_argv_node_t *iter = NULL;
 
 	assert(context);
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	if (!cur_path)
 		return -1; // It's top level and can't level up
 
@@ -579,10 +554,8 @@ int srp_up(kcontext_t *context)
 	}
 
 	// Don't store empty path
-	while (faux_argv_len(cur_path) == 0) {
-		faux_argv_free(cur_path);
-		kplugin_set_udata(plugin, NULL);
-	}
+	if (faux_argv_len(cur_path) == 0)
+		srp_udata_set_path(context, NULL);
 
 	sr_disconnect(conn);
 
@@ -601,7 +574,6 @@ int srp_insert(kcontext_t *context)
 	pexpr_t *expr = NULL;
 	pexpr_t *expr_to = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 	faux_argv_t *insert_from = NULL;
 	faux_argv_t *insert_to = NULL;
 	sr_move_position_t position = SR_MOVE_LAST;
@@ -618,8 +590,7 @@ int srp_insert(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	pargv = kcontext_pargv(context);
 
 	// 'from' argument
@@ -795,7 +766,6 @@ int srp_show_xml(kcontext_t *context)
 	sr_session_ctx_t *sess = NULL;
 	pexpr_t *expr = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 	sr_data_t *data = NULL;
 	struct ly_out *out = NULL;
 	struct lyd_node *child = NULL;
@@ -809,8 +779,7 @@ int srp_show_xml(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);
@@ -870,7 +839,6 @@ static int show(kcontext_t *context, sr_datastore_t ds)
 	sr_session_ctx_t *sess = NULL;
 	pexpr_t *expr = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 	char *xpath = NULL;
 
 	assert(context);
@@ -882,8 +850,7 @@ static int show(kcontext_t *context, sr_datastore_t ds)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 
 	if (kpargv_find(kcontext_pargv(context), "path") || cur_path) {
 		args = param2argv(cur_path, kcontext_pargv(context), "path");
@@ -960,7 +927,6 @@ int srp_deactivate(kcontext_t *context)
 	sr_session_ctx_t *sess = NULL;
 	pexpr_t *expr = NULL;
 	faux_argv_t *cur_path = NULL;
-	kplugin_t *plugin = NULL;
 	sr_data_t *data = NULL;
 	const struct ly_ctx *ctx = NULL;
 
@@ -973,8 +939,7 @@ int srp_deactivate(kcontext_t *context)
 		return -1;
 	}
 
-	plugin = kcontext_plugin(context);
-	cur_path = (faux_argv_t *)kplugin_udata(plugin);
+	cur_path = (faux_argv_t *)srp_udata_path(context);
 	args = param2argv(cur_path, kcontext_pargv(context), "path");
 	pline = pline_parse(sess, args, SRP_DEFAULT_PARSE_OPTS);
 	faux_argv_free(args);

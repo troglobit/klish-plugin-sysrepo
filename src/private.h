@@ -6,9 +6,18 @@
 #define _plugin_sysrepo_private_h
 
 #include <faux/faux.h>
+#include <faux/argv.h>
 #include <klish/kcontext_base.h>
 
 #include "pline.h"
+
+
+// Plugin's user-data structure
+typedef struct {
+	faux_argv_t *path; // Current data hierarchy path ('edit' operation)
+	uint32_t flags; // Parse/Show flags
+} srp_udata_t;
+
 
 // Repository to edit with srp commands
 #define SRP_REPO_EDIT SR_DS_CANDIDATE
@@ -52,6 +61,11 @@ int srp_deactivate(kcontext_t *context);
 // Sysrepo copy-paste
 int sr_ly_module_is_internal(const struct lys_module *ly_mod);
 int sr_module_is_internal(const struct lys_module *ly_mod);
+
+// Plugin's user-data service functions
+uint32_t srp_udata_flags(kcontext_t *context);
+faux_argv_t *srp_udata_path(kcontext_t *context);
+void srp_udata_set_path(kcontext_t *context, faux_argv_t *path);
 
 // Private
 bool_t show_xpath(sr_session_ctx_t *sess, const char *xpath, uint32_t flags);
