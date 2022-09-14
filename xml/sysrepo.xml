@@ -4,7 +4,11 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://clish.sourceforge.net/XMLSchema http://clish.sourceforge.net/XMLSchema/clish.xsd">
 
-<PLUGIN name="sysrepo"/>
+<PLUGIN name="sysrepo">
+	JuniperLikeShow = y
+	FirstKeyWithStatement = n
+	MultiKeysWithStatement = y
+</PLUGIN>
 
 
 <ENTRY name="PLINE_SET" purpose="ptype">
@@ -67,10 +71,12 @@
 
 	<ENTRY name="show" help="Show" mode="switch">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+
 		<ENTRY name="configuration" help="Show running-config" mode="sequence">
 			<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
+			<ACTION sym="srp_show_running@sysrepo"/>
 		</ENTRY>
-		<ACTION sym="srp_show_running@sysrepo"/>
+
 	</ENTRY>
 
 </ENTRY>

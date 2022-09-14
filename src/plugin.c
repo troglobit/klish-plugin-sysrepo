@@ -7,6 +7,8 @@
 #include <assert.h>
 
 #include <faux/faux.h>
+#include <faux/str.h>
+#include <faux/ini.h>
 #include <klish/kplugin.h>
 #include <klish/kcontext.h>
 
@@ -18,6 +20,8 @@
 
 const uint8_t kplugin_sysrepo_major = KPLUGIN_MAJOR;
 const uint8_t kplugin_sysrepo_minor = KPLUGIN_MINOR;
+
+static uint32_t parse_plugin_conf(const char *conf, uint32_t default_flags);
 
 
 int kplugin_sysrepo_init(kcontext_t *context)
@@ -80,7 +84,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	udata = faux_zmalloc(sizeof(*udata));
 	assert(udata);
 	udata->path = NULL;
-	udata->flags = 0;
+	udata->flags = parse_plugin_conf(kplugin_conf(plugin), SRP_DEFAULT_PARSE_OPTS);
 	kplugin_set_udata(plugin, udata);
 
 	return 0;
@@ -141,4 +145,46 @@ void srp_udata_set_path(kcontext_t *context, faux_argv_t *path)
 	if (udata->path)
 		faux_argv_free(udata->path);
 	udata->path = path;
+}
+
+
+static uint32_t parse_plugin_conf(const char *conf, uint32_t default_flags)
+{
+	uint32_t flags = default_flags;
+	faux_ini_t *ini = NULL;
+	const char *val = NULL;
+
+	if (!conf)
+		return flags;
+
+	ini = faux_ini_new();
+	if (!faux_ini_parse_str(ini, conf)) {
+		faux_ini_free(ini);
+		return flags;
+	}
+
+	if ((val = faux_ini_find(ini, "JuniperLikeShow"))) {
+		if (faux_str_cmp(val, "y") == 0)
+			flags = flags | PPARSE_JUNIPER_SHOW;
+		else if (faux_str_cmp(val, "n") == 0)
+			flags = flags & (~(uint32_t)PPARSE_JUNIPER_SHOW);
+	}
+
+	if ((val = faux_ini_find(ini, "FirstKeyWithStatement"))) {
+		if (faux_str_cmp(val, "y") == 0)
+			flags = flags | PPARSE_FIRST_KEY_W_STMT;
+		else if (faux_str_cmp(val, "n") == 0)
+			flags = flags & (~(uint32_t)PPARSE_FIRST_KEY_W_STMT);
+	}
+
+	if ((val = faux_ini_find(ini, "MultiKeysWithStatement"))) {
+		if (faux_str_cmp(val, "y") == 0)
+			flags = flags | PPARSE_MULTI_KEYS_W_STMT;
+		else if (faux_str_cmp(val, "n") == 0)
+			flags = flags & (~(uint32_t)PPARSE_MULTI_KEYS_W_STMT);
+	}
+
+	faux_ini_free(ini);
+
+	return flags;
 }
