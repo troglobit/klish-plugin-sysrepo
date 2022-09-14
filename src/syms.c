@@ -19,7 +19,6 @@
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
-#include "sr_copypaste.h"
 #include "pline.h"
 #include "private.h"
 

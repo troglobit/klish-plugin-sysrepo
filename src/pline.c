@@ -17,7 +17,7 @@
 #include <sysrepo/values.h>
 #include <libyang/tree_edit.h>
 
-#include "sr_copypaste.h"
+#include "private.h"
 #include "pline.h"
 
 
