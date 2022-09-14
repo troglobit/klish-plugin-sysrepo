@@ -1,6 +1,11 @@
 module ttt {
   namespace "urn:ttt";
-  prefix t;
+  prefix ttt;
+
+  import ietf-interfaces {
+    prefix ietf-interfaces;
+  }
+
 
   leaf topleaf {
     type string;
@@ -52,6 +57,18 @@ module ttt {
 
     leaf name {
       type string;
+    }
+
+    leaf iflink {
+      type leafref {
+        path "../../test/iface/name";
+      }
+    }
+
+    leaf absiflink {
+      type leafref {
+        path "/ietf-interfaces:interfaces/ietf-interfaces:interface/ietf-interfaces:name";
+      }
     }
 
     leaf comment {

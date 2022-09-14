@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include <faux/faux.h>
 #include <faux/str.h>
@@ -147,7 +148,7 @@ pexpr_t *pline_current_expr(pline_t *pline)
 
 
 static void pline_add_compl(pline_t *pline,
-	pcompl_type_e type, const struct lysc_node *node, char *xpath)
+	pcompl_type_e type, const struct lysc_node *node, const char *xpath)
 {
 	pcompl_t *pcompl = NULL;
 
@@ -537,8 +538,27 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 				// Completion
 				if (!str) {
+					char *compl_xpath = NULL;
+					if (LY_TYPE_LEAFREF == leaf->type->basetype) {
+						const char *tmp = NULL;
+						tmp = lyxp_get_expr(
+							((struct lysc_type_leafref *)leaf->type)->path);
+						if (tmp) {
+							if (tmp[0] == '/') {
+								compl_xpath = faux_str_dup(tmp);
+							} else {
+								compl_xpath = faux_str_sprintf(
+									"%s/%s",
+									pexpr->xpath,
+									tmp);
+							}
+	syslog(LOG_DEBUG, "LEAFREF xpath: %s\n", compl_xpath);
+						}
+					}
 					pline_add_compl(pline,
-						PCOMPL_TYPE, node, NULL);
+						PCOMPL_TYPE, node, compl_xpath);
+					if (compl_xpath)
+						faux_str_free(compl_xpath);
 					break;
 				}
 
@@ -752,7 +772,8 @@ static void pline_print_type_help(const struct lysc_node *node,
 {
 	assert(type);
 
-	if (type->basetype != LY_TYPE_UNION)
+	if ((type->basetype != LY_TYPE_UNION) &&
+		(type->basetype != LY_TYPE_LEAFREF))
 		printf("%s\n", node->name);
 
 	switch (type->basetype) {
@@ -832,6 +853,13 @@ static void pline_print_type_help(const struct lysc_node *node,
 		}
 		break;
 	}
+
+	case LY_TYPE_LEAFREF: {
+		struct lysc_type_leafref *t =
+			(struct lysc_type_leafref *)type;
+		pline_print_type_help(node, t->realtype);
+		}
+		break;
 
 	default:
 		printf("Unknown\n");
