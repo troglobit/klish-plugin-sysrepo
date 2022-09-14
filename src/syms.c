@@ -21,8 +21,7 @@
 
 #include "sr_copypaste.h"
 #include "pline.h"
-#include "syms.h"
-#include "show.h"
+#include "private.h"
 
 
 static faux_argv_t *param2argv(const faux_argv_t *cur_path,

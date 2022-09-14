@@ -1,9 +1,9 @@
 /*
- * syms.h
+ * private.h
  */
 
-#ifndef _syms_h
-#define _syms_h
+#ifndef _pligin_sysrepo_private_h
+#define _plugin_sysrepo_private_h
 
 #include <faux/faux.h>
 #include <klish/kcontext_base.h>
@@ -49,7 +49,10 @@ int srp_show(kcontext_t *context);
 int srp_show_running(kcontext_t *context);
 int srp_deactivate(kcontext_t *context);
 
+// Private
+bool_t show_xpath(sr_session_ctx_t *sess, const char *xpath, uint32_t flags);
+
 C_DECL_END
 
 
-#endif // _syms_h
+#endif // _plugin_sysrepo_private_h

@@ -16,7 +16,7 @@
 
 #include "sr_copypaste.h"
 #include "pline.h"
-#include "show.h"
+#include "private.h"
 
 #define LEVEL_SPACES_NUM 4
 

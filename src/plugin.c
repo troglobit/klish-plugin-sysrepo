@@ -13,7 +13,7 @@
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
 
-#include "syms.h"
+#include "private.h"
 
 
 const uint8_t kplugin_sysrepo_major = KPLUGIN_MAJOR;

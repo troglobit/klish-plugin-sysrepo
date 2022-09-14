@@ -10,11 +10,10 @@ kplugin_sysrepo_la_CFLAGS = $(AM_LDFLAGS)
 
 kplugin_sysrepo_la_SOURCES += \
 	src/plugin.c \
-	src/syms.h \
+	src/private.h \
 	src/syms.c \
 	src/sr_copypaste.h \
 	src/sr_copypaste.c \
 	src/pline.h \
 	src/pline.c \
-	src/show.h \
 	src/show.c
