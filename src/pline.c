@@ -347,11 +347,72 @@ size_t list_num_of_keys(const struct lysc_node *node)
 }
 
 
-static char *remap_xpath_prefixes(const char *orig_xpath, struct lysp_module *parsed)
+static const char *module_by_prefix(const struct lysp_module *parsed, const char *prefix)
 {
+	LY_ARRAY_COUNT_TYPE u = 0;
+
+	if (!parsed)
+		return NULL;
+	if (!prefix)
+		return NULL;
+
+	LY_ARRAY_FOR(parsed->imports, u) {
+		const struct lysp_import *import = &parsed->imports[u];
+		if (faux_str_cmp(prefix, import->prefix) == 0)
+			return import->name;
+	}
+
+	return NULL;
+}
 
 
-	return faux_str_dup(orig_xpath);
+static char *remap_xpath_prefixes(const char *orig_xpath, const struct lysp_module *parsed)
+{
+	char *remaped = NULL;
+	const char *pos = orig_xpath;
+	const char *start = orig_xpath;
+	char *cached_prefix = NULL;
+	char *cached_module = NULL;
+
+	if (!orig_xpath)
+		return NULL;
+
+	while (*pos != '\0') {
+		if (*pos == '/') {
+			faux_str_catn(&remaped, start, pos - start + 1);
+			start = pos + 1;
+		} else if (*pos == ':') {
+			if (pos != start) {
+				char *prefix = faux_str_dupn(start, pos - start);
+				if (cached_prefix && (faux_str_cmp(prefix, cached_prefix) == 0)) {
+					faux_str_cat(&remaped, cached_module);
+					faux_str_free(prefix);
+				} else {
+					const char *module = module_by_prefix(parsed, prefix);
+					if (module) {
+						faux_str_cat(&remaped, module);
+						faux_str_free(cached_prefix);
+						faux_str_free(cached_module);
+						cached_prefix = prefix;
+						cached_module = faux_str_dup(module);
+					} else {
+						faux_str_cat(&remaped, prefix);
+						faux_str_free(prefix);
+					}
+				}
+			}
+			faux_str_cat(&remaped, ":");
+			start = pos + 1;
+		}
+		pos++;
+	}
+	if (start != pos)
+		faux_str_catn(&remaped, start, pos - start);
+
+	faux_str_free(cached_prefix);
+	faux_str_free(cached_module);
+
+	return remaped;
 }
 
 
@@ -450,10 +511,9 @@ static char *leafref_xpath(const struct lysc_node *node, const char *node_path)
 	faux_str_cat(&compl_xpath, tmp);
 	faux_str_free(remaped_xpath);
 
-	syslog(LOG_DEBUG, "LEAFREF xpath: %s\n", compl_xpath);
-
 	return compl_xpath;
 }
+
 
 static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 	pline_t *pline, uint32_t flags)
