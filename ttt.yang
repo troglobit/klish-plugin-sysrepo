@@ -3,7 +3,7 @@ module ttt {
   prefix ttt;
 
   import ietf-interfaces {
-    prefix ietf-interfaces;
+    prefix if;
   }
 
 
@@ -67,7 +67,7 @@ module ttt {
 
     leaf absiflink {
       type leafref {
-        path "/ietf-interfaces:interfaces/ietf-interfaces:interface/ietf-interfaces:name";
+        path "/if:interfaces/if:interface/if:name";
       }
     }
 

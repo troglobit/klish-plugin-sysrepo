@@ -347,6 +347,114 @@ size_t list_num_of_keys(const struct lysc_node *node)
 }
 
 
+static char *remap_xpath_prefixes(const char *orig_xpath, struct lysp_module *parsed)
+{
+
+
+	return faux_str_dup(orig_xpath);
+}
+
+
+static const char *cut_front_ups(const char *orig_xpath, size_t *up_num)
+{
+	const char *xpath = orig_xpath;
+	const char *needle = "../";
+	size_t needle_len = strlen(needle);
+	size_t num = 0;
+
+	if (!xpath)
+		return NULL;
+
+	while (faux_str_cmpn(xpath, needle, needle_len) == 0) {
+		num++;
+		xpath += needle_len;
+	}
+
+	if (up_num)
+		*up_num = num;
+
+	return xpath;
+}
+
+
+static char *cut_trailing_components(const char *orig_xpath, size_t up_num)
+{
+	const char *xpath = NULL;
+	char *res = NULL;
+	size_t num = 0;
+
+	if (!orig_xpath)
+		return NULL;
+
+	xpath = orig_xpath + strlen(orig_xpath);
+	while (xpath >= orig_xpath) {
+		if (*xpath == '/')
+			num++;
+		if (num == up_num) {
+			res = faux_str_dupn(orig_xpath, xpath - orig_xpath + 1);
+			break;
+		}
+		xpath--;
+	}
+
+	return res;
+}
+
+
+static char *leafref_xpath(const struct lysc_node *node, const char *node_path)
+{
+	char *compl_xpath = NULL;
+	const struct lysc_type *type = NULL;
+	const struct lysc_type_leafref *leafref = NULL;
+	const char *orig_xpath = NULL;
+	char *remaped_xpath = NULL;
+	const char *tmp = NULL;
+	size_t up_num = 0;
+
+	if (!node)
+		return NULL;
+	if (!(node->nodetype & (LYS_LEAF | LYS_LEAFLIST)))
+		return NULL;
+
+	if (node->nodetype & LYS_LEAF)
+		type = ((const struct lysc_node_leaf *)node)->type;
+	else
+		type = ((const struct lysc_node_leaflist *)node)->type;
+
+	if (type->basetype != LY_TYPE_LEAFREF)
+		return NULL;
+	leafref = (const struct lysc_type_leafref *)type;
+
+	orig_xpath = lyxp_get_expr(leafref->path);
+	if (!orig_xpath)
+		return NULL;
+
+	remaped_xpath = remap_xpath_prefixes(orig_xpath, node->module->parsed);
+
+	if (remaped_xpath[0] == '/') // Absolute path
+		return remaped_xpath;
+
+	// Relative path
+	if (!node_path) {
+		faux_str_free(remaped_xpath);
+		return NULL;
+	}
+
+	tmp = cut_front_ups(remaped_xpath, &up_num);
+	compl_xpath = cut_trailing_components(node_path, up_num);
+	if (!compl_xpath) {
+		faux_str_free(remaped_xpath);
+		return NULL;
+	}
+
+	faux_str_cat(&compl_xpath, tmp);
+	faux_str_free(remaped_xpath);
+
+	syslog(LOG_DEBUG, "LEAFREF xpath: %s\n", compl_xpath);
+
+	return compl_xpath;
+}
+
 static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
 	pline_t *pline, uint32_t flags)
 {
@@ -538,23 +646,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 				// Completion
 				if (!str) {
-					char *compl_xpath = NULL;
-					if (LY_TYPE_LEAFREF == leaf->type->basetype) {
-						const char *tmp = NULL;
-						tmp = lyxp_get_expr(
-							((struct lysc_type_leafref *)leaf->type)->path);
-						if (tmp) {
-							if (tmp[0] == '/') {
-								compl_xpath = faux_str_dup(tmp);
-							} else {
-								compl_xpath = faux_str_sprintf(
-									"%s/%s",
-									pexpr->xpath,
-									tmp);
-							}
-	syslog(LOG_DEBUG, "LEAFREF xpath: %s\n", compl_xpath);
-						}
-					}
+					char *compl_xpath = leafref_xpath(node, pexpr->xpath);
 					pline_add_compl(pline,
 						PCOMPL_TYPE, node, compl_xpath);
 					if (compl_xpath)
