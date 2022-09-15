@@ -676,6 +676,38 @@ err:
 }
 
 
+int srp_verify(kcontext_t *context)
+{
+	int ret = -1;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
+		fprintf(stderr, "Can't connect to data repository\n");
+		return -1;
+	}
+
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
+		fprintf(stderr, "Can't connect to candidate data store\n");
+		goto err;
+	}
+
+	// Validate candidate config
+	if (sr_validate(sess, NULL, 0) != SR_ERR_OK) {
+		fprintf(stderr, "Invalid candidate configuration\n");
+		goto err;
+	}
+
+	ret = 0;
+err:
+	sr_disconnect(conn);
+
+	return ret;
+}
+
+
 int srp_commit(kcontext_t *context)
 {
 	int ret = -1;
@@ -689,13 +721,8 @@ int srp_commit(kcontext_t *context)
 		return -1;
 	}
 
-	// Validate candidate config
 	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
 		fprintf(stderr, "Can't connect to candidate data store\n");
-		goto err;
-	}
-	if (sr_validate(sess, NULL, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Invalid candidate configuration\n");
 		goto err;
 	}
 

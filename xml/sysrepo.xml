@@ -169,8 +169,17 @@
 		<ACTION sym="srp_insert@sysrepo"/>
 	</ENTRY>
 
+	<ENTRY name="verify" help="Commit data to running-config" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="srp_commit@sysrepo"/>
+	</ENTRY>
+
 	<ENTRY name="commit" help="Commit data to running-config" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="check" help="Verify the candidate configuration" mode="sequence" min="0">
+			<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+			<ACTION sym="srp_verify@sysrepo"/>
+		</ENTRY>
 		<ACTION sym="srp_commit@sysrepo"/>
 	</ENTRY>
 

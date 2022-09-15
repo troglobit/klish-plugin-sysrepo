@@ -74,6 +74,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	kplugin_add_syms(plugin, ksym_new_ext("srp_up", srp_up,
 		KSYM_USERDEFINED_PERMANENT, KSYM_SYNC));
 	kplugin_add_syms(plugin, ksym_new("srp_insert", srp_insert));
+	kplugin_add_syms(plugin, ksym_new("srp_verify", srp_verify));
 	kplugin_add_syms(plugin, ksym_new("srp_commit", srp_commit));
 	kplugin_add_syms(plugin, ksym_new("srp_rollback", srp_rollback));
 	kplugin_add_syms(plugin, ksym_new("srp_show", srp_show));
