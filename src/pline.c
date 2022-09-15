@@ -643,11 +643,18 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					// Completion
 					if (!str) {
 						char *tmp = NULL;
+						char *compl_xpath = NULL;
 
 						tmp = faux_str_sprintf("%s/%s",
 							pexpr->xpath, leaf->name);
 						pline_add_compl(pline,
 							PCOMPL_TYPE, iter, tmp);
+						compl_xpath = leafref_xpath(iter, tmp);
+						if (compl_xpath) {
+							pline_add_compl(pline, PCOMPL_TYPE,
+								NULL, compl_xpath);
+							faux_str_free(compl_xpath);
+						}
 						faux_str_free(tmp);
 						break_upper_loop = BOOL_TRUE;
 						break;
@@ -748,6 +755,13 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 			// Completion
 			if (!str) {
+				char *compl_xpath = leafref_xpath(node, pexpr->xpath);
+
+				if (compl_xpath) {
+					pline_add_compl(pline,
+						PCOMPL_TYPE, NULL, compl_xpath);
+					faux_str_free(compl_xpath);
+				}
 				pline_add_compl(pline,
 					PCOMPL_TYPE, node, pexpr->xpath);
 				break;

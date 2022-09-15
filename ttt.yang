@@ -77,11 +77,25 @@ module ttt {
 
     leaf-list multi {
       ordered-by user;
-      type string;
+      type leafref {
+        path "../../test/iface/name";
+      }
     }
 
   }
 
+
+  list ref {
+    ordered-by user;
+    key "name";
+
+    leaf name {
+      type leafref {
+        path "../../test/iface/name";
+      }
+    }
+
+  }
 
   list rule {
     key "from to";
