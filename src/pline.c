@@ -709,8 +709,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					char *compl_xpath = leafref_xpath(node, pexpr->xpath);
 					pline_add_compl(pline,
 						PCOMPL_TYPE, node, compl_xpath);
-					if (compl_xpath)
-						faux_str_free(compl_xpath);
+					faux_str_free(compl_xpath);
 					break;
 				}
 
@@ -1044,6 +1043,7 @@ void pline_print_completions(const pline_t *pline, bool_t help)
 				printf("%s\n", tmp);
 				free(tmp);
 			}
+			sr_free_values(vals, val_num);
 		}
 
 		if (!node)
