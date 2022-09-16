@@ -86,7 +86,7 @@
 
 	<ENTRY name="prompt" purpose="prompt">
 		<ACTION sym="srp_prompt_edit_path@sysrepo"/>
-		<ACTION sym="print"># </ACTION>
+		<ACTION sym="prompt">%u@%h# </ACTION>
 	</ENTRY>
 
 	<ENTRY name="exit" help="Exit configuration mode or level up">
@@ -167,11 +167,6 @@
 			</ENTRY>
 		</ENTRY>
 		<ACTION sym="srp_insert@sysrepo"/>
-	</ENTRY>
-
-	<ENTRY name="verify" help="Commit data to running-config" mode="sequence">
-		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-		<ACTION sym="srp_commit@sysrepo"/>
 	</ENTRY>
 
 	<ENTRY name="commit" help="Commit data to running-config" mode="sequence">
