@@ -73,7 +73,7 @@
 	<ENTRY name="show" help="Show" mode="switch">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 
-		<ENTRY name="configuration" help="Show running-config" mode="sequence">
+		<ENTRY name="running" help="Show running-config" mode="sequence">
 			<ENTRY name="SUBCOMMAND" purpose="ptype" ref="/SUBCOMMAND"/>
 			<ACTION sym="srp_show_running@sysrepo"/>
 		</ENTRY>
@@ -96,14 +96,10 @@
 		<ACTION sym="nav" exec_on="fail">replace main</ACTION>
 	</ENTRY>
 
-	<ENTRY name="quit" help="Alias for 'exit' command" ref="/sysrepo/exit"/>
-
-	<ENTRY name="run" help="Run operational mode command">
+	<ENTRY name="do" help="Execute operational mode command">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
 		<ENTRY name="operational" mode="switch" container="true" ref="/main"/>
 	</ENTRY>
-
-	<ENTRY name="do" help="Alias for 'run' command" ref="/sysrepo/run"/>
 
 	<ENTRY name="set" help="Set data to database" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
@@ -120,8 +116,6 @@
 		</ENTRY>
 		<ACTION sym="srp_del@sysrepo"/>
 	</ENTRY>
-
-	<ENTRY name="delete" help="Alias for 'del' command" ref="/sysrepo/del"/>
 
 	<ENTRY name="edit" help="Change hierarchy level" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
@@ -172,11 +166,12 @@
 
 	<ENTRY name="commit" help="Commit data to running-config" mode="sequence">
 		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-		<ENTRY name="check" help="Verify the candidate configuration" mode="sequence" min="0">
-			<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
-			<ACTION sym="srp_verify@sysrepo"/>
-		</ENTRY>
 		<ACTION sym="srp_commit@sysrepo"/>
+	</ENTRY>
+
+	<ENTRY name="check" help="Verify the candidate configuration" mode="sequence" min="0">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ACTION sym="srp_verify@sysrepo"/>
 	</ENTRY>
 
 	<ENTRY name="rollback" help="Rollback to running-config" mode="sequence">
