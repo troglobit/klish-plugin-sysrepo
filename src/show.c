@@ -22,12 +22,17 @@
 #define JUN(flags) (flags & PPARSE_JUNIPER_SHOW)
 
 
-static void show_container(const struct lyd_node *node, size_t level, uint32_t flags);
-static void show_list(const struct lyd_node *node, size_t level, uint32_t flags);
-static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags);
-static void show_leaflist(const struct lyd_node *node, size_t level, uint32_t flags);
-static void show_node(const struct lyd_node *node, size_t level, uint32_t flags);
-static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32_t flags);
+static void show_container(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags);
+static void show_list(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags);
+static void show_leaf(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags);
+static void show_leaflist(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags);
+static void show_node(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags);
+static enum diff_op str2diff_op(const char *str);
 
 
 static char *get_value(const struct lyd_node *node)
@@ -74,20 +79,50 @@ static char *get_value(const struct lyd_node *node)
 }
 
 
-static void show_container(const struct lyd_node *node, size_t level, uint32_t flags)
+static const char *diff_prefix(enum diff_op op, uint32_t flags)
+{
+	bool_t c = flags & PPARSE_COLORIZE;
+
+	if (DIFF_OP_CREATE == op)
+		return c ? "\x1b[32m+" : "+";
+	else if (DIFF_OP_DELETE == op)
+		return c ? "\x1b[31m-" : "-";
+	else if (DIFF_OP_REPLACE == op)
+		return c ? "\x1b[33m=" : "=";
+
+	return "";
+}
+
+
+static const char *diff_suffix(enum diff_op op, uint32_t flags)
+{
+	if (flags & PPARSE_COLORIZE)
+		return "\x1b[0m";
+
+	return "";
+}
+
+
+static void show_container(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	if (!node)
 		return;
 
-	printf("%*s%s%s\n", (int)(level * LEVEL_SPACES_NUM), "",
-		node->schema->name, JUN(flags) ? " {" : "");
-	show_subtree(lyd_child(node), level + 1, flags);
+	printf("%s%*s%s%s%s\n", diff_prefix(op, flags),
+		(int)(level * LEVEL_SPACES_NUM), "",
+		node->schema->name, JUN(flags) ? " {" : "",
+		diff_suffix(op, flags));
+	show_subtree(lyd_child(node), level + 1, op, flags);
 	if (JUN(flags))
-		printf("%*s%s\n", (int)(level * LEVEL_SPACES_NUM), "", "}");
+		printf("%s%*s%s%s\n", diff_prefix(op, flags),
+			(int)(level * LEVEL_SPACES_NUM), "", "}",
+			diff_suffix(op, flags));
 }
 
 
-static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
+static void show_list(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	size_t keys_num = 0;
 	const struct lyd_node *iter = NULL;
@@ -96,7 +131,8 @@ static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
 	if (!node)
 		return;
 
-	printf("%*s%s", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
+	printf("%s%*s%s", diff_prefix(op, flags),
+		(int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
 
 	LY_LIST_FOR(lyd_child(node), iter) {
 		char *value = NULL;
@@ -113,14 +149,17 @@ static void show_list(const struct lyd_node *node, size_t level, uint32_t flags)
 		faux_str_free(value);
 		first_key = BOOL_FALSE;
 	}
-	printf("%s\n", JUN(flags) ? " {" : "");
-	show_subtree(lyd_child(node), level + 1, flags);
+	printf("%s%s\n", JUN(flags) ? " {" : "", diff_suffix(op, flags));
+	show_subtree(lyd_child(node), level + 1, op, flags);
 	if (JUN(flags))
-		printf("%*s%s\n", (int)(level * LEVEL_SPACES_NUM), "", "}");
+		printf("%s%*s%s%s\n", diff_prefix(op, flags),
+			(int)(level * LEVEL_SPACES_NUM), "", "}",
+			diff_suffix(op, flags));
 }
 
 
-static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
+static void show_leaf(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	struct lysc_node_leaf *leaf = (struct lysc_node_leaf *)node;
 
@@ -129,7 +168,8 @@ static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
 	if (node->schema->flags & LYS_KEY)
 		return;
 
-	printf("%*s%s", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
+	printf("%s%*s%s", diff_prefix(op, flags),
+		(int)(level * LEVEL_SPACES_NUM), "", node->schema->name);
 
 	leaf = (struct lysc_node_leaf *)node->schema;
 	if (leaf->type->basetype != LY_TYPE_EMPTY) {
@@ -138,11 +178,12 @@ static void show_leaf(const struct lyd_node *node, size_t level, uint32_t flags)
 		faux_str_free(value);
 	}
 
-	printf("%s\n", JUN(flags) ? ";" : "");
+	printf("%s%s\n", JUN(flags) ? ";" : "", diff_suffix(op, flags));
 }
 
 
-static void show_leaflist(const struct lyd_node *node, size_t level, uint32_t flags)
+static void show_leaflist(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	char *value = NULL;
 
@@ -150,15 +191,20 @@ static void show_leaflist(const struct lyd_node *node, size_t level, uint32_t fl
 		return;
 
 	value = get_value(node);
-	printf("%*s%s %s%s\n", (int)(level * LEVEL_SPACES_NUM), "", node->schema->name,
-		value, JUN(flags) ? ";" : "");
+	printf("%s%*s%s %s%s%s\n", diff_prefix(op, flags),
+		(int)(level * LEVEL_SPACES_NUM), "", node->schema->name,
+		value, JUN(flags) ? ";" : "",
+		diff_suffix(op, flags));
 	faux_str_free(value);
 }
 
 
-static void show_node(const struct lyd_node *node, size_t level, uint32_t flags)
+static void show_node(const struct lyd_node *node, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	const struct lysc_node *schema = NULL;
+	struct lyd_meta *meta = NULL;
+	enum diff_op cur_op = op;
 
 	if (!node)
 		return;
@@ -173,21 +219,25 @@ static void show_node(const struct lyd_node *node, size_t level, uint32_t flags)
 	if (!(schema->flags & LYS_CONFIG_W))
 		return;
 
+	meta = lyd_find_meta(node->meta, NULL, "yang:operation");
+	if (meta)
+		cur_op = str2diff_op(lyd_get_meta_value(meta));
+
 	// Container
 	if (schema->nodetype & LYS_CONTAINER) {
-		show_container((const struct lyd_node *)node, level, flags);
+		show_container(node, level, cur_op, flags);
 
 	// List
 	} else if (schema->nodetype & LYS_LIST) {
-		show_list((const struct lyd_node *)node, level, flags);
+		show_list(node, level, cur_op, flags);
 
 	// Leaf
 	} else if (schema->nodetype & LYS_LEAF) {
-		show_leaf((const struct lyd_node *)node, level, flags);
+		show_leaf(node, level, cur_op, flags);
 
 	// Leaf-list
 	} else if (schema->nodetype & LYS_LEAFLIST) {
-		show_leaflist((const struct lyd_node *)node, level, flags);
+		show_leaflist(node, level, cur_op, flags);
 
 	} else {
 		return;
@@ -195,7 +245,8 @@ static void show_node(const struct lyd_node *node, size_t level, uint32_t flags)
 }
 
 
-static void show_sorted_list(faux_list_t *list, size_t level, uint32_t flags)
+static void show_sorted_list(faux_list_t *list, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	faux_list_node_t *iter = NULL;
 	const struct lyd_node *lyd = NULL;
@@ -205,7 +256,7 @@ static void show_sorted_list(faux_list_t *list, size_t level, uint32_t flags)
 
 	iter = faux_list_head(list);
 	while ((lyd = (const struct lyd_node *)faux_list_each(&iter)))
-		show_node(lyd, level, flags);
+		show_node(lyd, level, op, flags);
 }
 
 
@@ -258,7 +309,8 @@ static int leaflist_compare(const void *first, const void *second)
 }
 
 
-static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32_t flags)
+void show_subtree(const struct lyd_node *nodes_list, size_t level,
+	enum diff_op op, uint32_t flags)
 {
 	const struct lyd_node *iter = NULL;
 	faux_list_t *list = NULL;
@@ -274,7 +326,7 @@ static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32
 				faux_list_add(list, (void *)iter);
 				continue;
 			}
-			show_sorted_list(list, level, flags);
+			show_sorted_list(list, level, op, flags);
 			faux_list_free(list);
 			list = NULL;
 			saved_lysc = NULL;
@@ -295,11 +347,11 @@ static void show_subtree(const struct lyd_node *nodes_list, size_t level, uint32
 			continue;
 		}
 
-		show_node(iter, level, flags);
+		show_node(iter, level, op, flags);
 	}
 
 	if (list) {
-		show_sorted_list(list, level, flags);
+		show_sorted_list(list, level, op, flags);
 		faux_list_free(list);
 	}
 }
@@ -322,8 +374,21 @@ bool_t show_xpath(sr_session_ctx_t *sess, const char *xpath, uint32_t flags)
 		nodes_list = data->tree;
 	}
 
-	show_subtree(nodes_list, 0, flags);
+	show_subtree(nodes_list, 0, DIFF_OP_NONE, flags);
 	sr_release_data(data);
 
 	return BOOL_TRUE;
+}
+
+
+static enum diff_op str2diff_op(const char *str)
+{
+	if (!strcmp(str, "create"))
+		return DIFF_OP_CREATE;
+	else if (!strcmp(str, "delete"))
+		return DIFF_OP_DELETE;
+	else if (!strcmp(str, "replace"))
+		return DIFF_OP_REPLACE;
+
+	return DIFF_OP_NONE;
 }

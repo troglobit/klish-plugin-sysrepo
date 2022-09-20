@@ -1032,3 +1032,97 @@ err:
 }
 
 
+int srp_diff(kcontext_t *context)
+{
+	int ret = -1;
+	pline_t *pline = NULL;
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess1 = NULL;
+	sr_session_ctx_t *sess2 = NULL;
+	sr_data_t *data1 = NULL;
+	sr_data_t *data2 = NULL;
+	faux_argv_t *cur_path = NULL;
+	const char *xpath = NULL;
+	struct lyd_node *diff = NULL;
+
+	assert(context);
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SR_DS_RUNNING, &sess1)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+	if (sr_session_start(conn, SRP_REPO_EDIT, &sess2)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	cur_path = (faux_argv_t *)srp_udata_path(context);
+
+	if (kpargv_find(kcontext_pargv(context), "path") || cur_path) {
+		faux_argv_t *args = NULL;
+		pexpr_t *expr = NULL;
+
+		args = param2argv(cur_path, kcontext_pargv(context), "path");
+		pline = pline_parse(sess2, args, srp_udata_flags(context));
+		faux_argv_free(args);
+
+		if (pline->invalid) {
+			fprintf(stderr, "Invalid 'show' request\n");
+			goto err;
+		}
+
+		if (faux_list_len(pline->exprs) > 1) {
+			fprintf(stderr, "Can't process more than one object\n");
+			goto err;
+		}
+
+		if (!(expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs)))) {
+			fprintf(stderr, "Can't get expression\n");
+			goto err;
+		}
+		if (!(expr->pat & PT_EDIT)) {
+			fprintf(stderr, "Illegal expression for 'show' operation\n");
+			goto err;
+		}
+		if (!expr->xpath) {
+			fprintf(stderr, "Empty expression for 'show' operation\n");
+			goto err;
+		}
+		xpath = expr->xpath;
+	}
+
+	if (!xpath)
+		xpath = "/*";
+
+	if (sr_get_data(sess1, xpath, 0, 0, 0, &data1) != SR_ERR_OK) {
+		fprintf(stderr, "Can't get specified subtree\n");
+		goto err;
+	}
+	if (sr_get_data(sess2, xpath, 0, 0, 0, &data2) != SR_ERR_OK) {
+		fprintf(stderr, "Can't get specified subtree\n");
+		goto err;
+	}
+
+	if (lyd_diff_siblings(data1->tree, data2->tree, 0, &diff) != LY_SUCCESS) {
+		fprintf(stderr, "Can't generate diff\n");
+		goto err;
+	}
+
+	show_subtree(diff, 0, DIFF_OP_NONE, srp_udata_flags(context));
+	lyd_free_siblings(diff);
+
+	ret = 0;
+err:
+	if (data1)
+		sr_release_data(data1);
+	if (data2)
+		sr_release_data(data2);
+
+	pline_free(pline);
+	sr_disconnect(conn);
+
+	return ret;
+}
+

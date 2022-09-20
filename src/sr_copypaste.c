@@ -1,5 +1,12 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
+
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
+
+#include "private.h"
 
 
 static int

@@ -79,6 +79,7 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	kplugin_add_syms(plugin, ksym_new("srp_rollback", srp_rollback));
 	kplugin_add_syms(plugin, ksym_new("srp_show", srp_show));
 	kplugin_add_syms(plugin, ksym_new("srp_show_running", srp_show_running));
+	kplugin_add_syms(plugin, ksym_new("srp_diff", srp_diff));
 	kplugin_add_syms(plugin, ksym_new("srp_deactivate", srp_deactivate));
 
 	// User-data initialization
@@ -183,6 +184,13 @@ static uint32_t parse_plugin_conf(const char *conf, uint32_t default_flags)
 			flags = flags | PPARSE_MULTI_KEYS_W_STMT;
 		else if (faux_str_cmp(val, "n") == 0)
 			flags = flags & (~(uint32_t)PPARSE_MULTI_KEYS_W_STMT);
+	}
+
+	if ((val = faux_ini_find(ini, "Colorize"))) {
+		if (faux_str_cmp(val, "y") == 0)
+			flags = flags | PPARSE_COLORIZE;
+		else if (faux_str_cmp(val, "n") == 0)
+			flags = flags & (~(uint32_t)PPARSE_COLORIZE);
 	}
 
 	faux_ini_free(ini);

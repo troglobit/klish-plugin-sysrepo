@@ -57,11 +57,8 @@ int srp_commit(kcontext_t *context);
 int srp_rollback(kcontext_t *context);
 int srp_show(kcontext_t *context);
 int srp_show_running(kcontext_t *context);
+int srp_diff(kcontext_t *context);
 int srp_deactivate(kcontext_t *context);
-
-// Sysrepo copy-paste
-int sr_ly_module_is_internal(const struct lys_module *ly_mod);
-int sr_module_is_internal(const struct lys_module *ly_mod);
 
 // Plugin's user-data service functions
 uint32_t srp_udata_flags(kcontext_t *context);
@@ -69,7 +66,19 @@ faux_argv_t *srp_udata_path(kcontext_t *context);
 void srp_udata_set_path(kcontext_t *context, faux_argv_t *path);
 
 // Private
+enum diff_op {
+    DIFF_OP_CREATE,
+    DIFF_OP_DELETE,
+    DIFF_OP_REPLACE,
+    DIFF_OP_NONE,
+};
+
 bool_t show_xpath(sr_session_ctx_t *sess, const char *xpath, uint32_t flags);
+void show_subtree(const struct lyd_node *nodes_list, size_t level,
+	enum diff_op op, uint32_t flags);
+
+// Sysrepo copy-paste
+int sr_module_is_internal(const struct lys_module *ly_mod);
 
 C_DECL_END
 

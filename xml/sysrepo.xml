@@ -8,6 +8,7 @@
 	JuniperLikeShow = y
 	FirstKeyWithStatement = n
 	MultiKeysWithStatement = y
+	Colorize = y
 </PLUGIN>
 
 
@@ -189,6 +190,14 @@
 			<ENTRY name="PLINE_EDIT" purpose="ptype" ref="/PLINE_EDIT"/>
 		</ENTRY>
 		<ACTION sym="srp_show@sysrepo"/>
+	</ENTRY>
+
+	<ENTRY name="diff" help="Show diff to running-config" mode="sequence">
+		<ENTRY name="COMMAND" purpose="ptype" ref="/COMMAND"/>
+		<ENTRY name="path" min="0" max="100">
+			<ENTRY name="PLINE_EDIT" purpose="ptype" ref="/PLINE_EDIT"/>
+		</ENTRY>
+		<ACTION sym="srp_diff@sysrepo"/>
 	</ENTRY>
 
 <!--
