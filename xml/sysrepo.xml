@@ -66,19 +66,17 @@
 <VIEW name="main">
 
 	<COMMAND name="configure" help="Configure system">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="nav">replace sysrepo</ACTION>
 	</COMMAND>
 
-	<ENTRY name="show" help="Show" mode="switch">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-
+	<COMMAND name="show" help="Show" mode="switch">
+		<PTYPE ref="/COMMAND"/>
 		<COMMAND name="running" help="Show running-config">
-			<PTYPE name="COMMAND" ref="/COMMAND"/>
+			<PTYPE ref="/COMMAND"/>
 			<ACTION sym="srp_show_running@sysrepo"/>
 		</COMMAND>
-
-	</ENTRY>
+	</COMMAND>
 
 </VIEW>
 
@@ -91,116 +89,116 @@
 	</PROMPT>
 
 	<COMMAND name="exit" help="Exit configuration mode or level up">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="srp_up@sysrepo"/>
 		<ACTION sym="nav" exec_on="fail">replace main</ACTION>
 	</COMMAND>
 
 	<COMMAND name="do" help="Execute operational mode command">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<VIEW name="operational" ref="/main"/>
 	</COMMAND>
 
 	<COMMAND name="set" help="Set data to database">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="path" max="100">
-			<PTYPE name="PLINE_SET" ref="/PLINE_SET"/>
-		</ENTRY>
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="path" max="100">
+			<PTYPE ref="/PLINE_SET"/>
+		</PARAM>
 		<ACTION sym="srp_set@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="del" help="Delete data from database">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="path" max="100">
-			<PTYPE name="PLINE_DEL" ref="/PLINE_DEL"/>
-		</ENTRY>
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="path" max="100">
+			<PTYPE ref="/PLINE_DEL"/>
+		</PARAM>
 		<ACTION sym="srp_del@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="edit" help="Change hierarchy level">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="path" max="100">
-			<PTYPE name="PLINE_EDIT" ref="/PLINE_EDIT"/>
-		</ENTRY>
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="path" max="100">
+			<PTYPE ref="/PLINE_EDIT"/>
+		</PARAM>
 		<ACTION sym="srp_edit@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="top" help="Change hierarchy level to the top one">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="srp_top@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="up" help="Up hierarchy level">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="srp_up@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="insert" help="Insert statement to specified position">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="from_path" max="100">
-			<PTYPE name="PLINE_INSERT_FROM" ref="/PLINE_INSERT_FROM"/>
-		</ENTRY>
-		<ENTRY name="position" mode="switch" container="true">
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="from_path" max="100">
+			<PTYPE ref="/PLINE_INSERT_FROM"/>
+		</PARAM>
+		<SWITCH name="position">
 			<COMMAND name="first" help="First position">
-				<PTYPE name="COMMAND" ref="/COMMAND"/>
+				<PTYPE ref="/COMMAND"/>
 			</COMMAND>
 			<COMMAND name="last" help="Last position">
-				<PTYPE name="COMMAND" ref="/COMMAND"/>
+				<PTYPE ref="/COMMAND"/>
 			</COMMAND>
-			<ENTRY name="relative_block" mode="sequence" container="true">
-				<ENTRY name="relative" mode="switch" container="true">
+			<SEQ name="relative_block">
+				<SWITCH name="relative">
 					<COMMAND name="before" help="Before specified element">
-						<PTYPE name="SUBCOMMAND" ref="/SUBCOMMAND"/>
+						<PTYPE ref="/COMMAND"/>
 					</COMMAND>
 					<COMMAND name="after" help="After specified element">
-						<PTYPE name="SUBCOMMAND" ref="/SUBCOMMAND"/>
+						<PTYPE ref="/COMMAND"/>
 					</COMMAND>
-				</ENTRY>
-				<ENTRY name="to_path" max="100">
-					<PTYPE name="PLINE_INSERT_TO" ref="/PLINE_INSERT_TO"/>
-				</ENTRY>
-			</ENTRY>
-		</ENTRY>
+				</SWITCH>
+				<PARAM name="to_path" max="100">
+					<PTYPE ref="/PLINE_INSERT_TO"/>
+				</PARAM>
+			</SEQ>
+		</SWITCH>
 		<ACTION sym="srp_insert@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="commit" help="Commit data to running-config">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="srp_commit@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="check" help="Verify the candidate configuration">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="srp_verify@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="rollback" help="Rollback to running-config">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
+		<PTYPE ref="/COMMAND"/>
 		<ACTION sym="srp_rollback@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="show" help="Show data hierarchy">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="path" min="0" max="100">
-			<PTYPE name="PLINE_EDIT" ref="/PLINE_EDIT"/>
-		</ENTRY>
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="path" min="0" max="100">
+			<PTYPE ref="/PLINE_EDIT"/>
+		</PARAM>
 		<ACTION sym="srp_show@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="diff" help="Show diff to running-config">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="path" min="0" max="100">
-			<PTYPE name="PLINE_EDIT" ref="/PLINE_EDIT"/>
-		</ENTRY>
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="path" min="0" max="100">
+			<PTYPE ref="/PLINE_EDIT"/>
+		</PARAM>
 		<ACTION sym="srp_diff@sysrepo"/>
 	</COMMAND>
 
 <!--
 	<COMMAND name="deactivate" help="Deactivate statement">
-		<PTYPE name="COMMAND" ref="/COMMAND"/>
-		<ENTRY name="path" max="100">
-			<PTYPE name="PLINE_DEL" ref="/PLINE_DEL"/>
-		</ENTRY>
+		<PTYPE ref="/COMMAND"/>
+		<PARAM name="path" max="100">
+			<PTYPE ref="/PLINE_DEL"/>
+		</PARAM>
 		<ACTION sym="srp_deactivate@sysrepo"/>
 	</COMMAND>
 -->
