@@ -95,23 +95,17 @@
 	</COMMAND>
 
 	<COMMAND name="set" help="Set data to database">
-		<PARAM name="path" max="100">
-			<PTYPE ref="/PLINE_SET"/>
-		</PARAM>
+		<PARAM name="path" ptype="/PLINE_SET" max="100"/>
 		<ACTION sym="srp_set@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="del" help="Delete data from database">
-		<PARAM name="path" max="100">
-			<PTYPE ref="/PLINE_DEL"/>
-		</PARAM>
+		<PARAM name="path" ptype="/PLINE_DEL" max="100"/>
 		<ACTION sym="srp_del@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="edit" help="Change hierarchy level">
-		<PARAM name="path" max="100">
-			<PTYPE ref="/PLINE_EDIT"/>
-		</PARAM>
+		<PARAM name="path" ptype="/PLINE_EDIT" max="100"/>
 		<ACTION sym="srp_edit@sysrepo"/>
 	</COMMAND>
 
@@ -124,9 +118,7 @@
 	</COMMAND>
 
 	<COMMAND name="insert" help="Insert statement to specified position">
-		<PARAM name="from_path" max="100">
-			<PTYPE ref="/PLINE_INSERT_FROM"/>
-		</PARAM>
+		<PARAM name="from_path" ptype="/PLINE_INSERT_FROM" max="100"/>
 		<SWITCH name="position">
 			<COMMAND name="first" help="First position"/>
 			<COMMAND name="last" help="Last position"/>
@@ -135,9 +127,7 @@
 					<COMMAND name="before" help="Before specified element"/>
 					<COMMAND name="after" help="After specified element"/>
 				</SWITCH>
-				<PARAM name="to_path" max="100">
-					<PTYPE ref="/PLINE_INSERT_TO"/>
-				</PARAM>
+				<PARAM name="to_path" ptype="/PLINE_INSERT_TO" max="100"/>
 			</SEQ>
 		</SWITCH>
 		<ACTION sym="srp_insert@sysrepo"/>
@@ -156,24 +146,18 @@
 	</COMMAND>
 
 	<COMMAND name="show" help="Show data hierarchy">
-		<PARAM name="path" min="0" max="100">
-			<PTYPE ref="/PLINE_EDIT"/>
-		</PARAM>
+		<PARAM name="path" ptype="/PLINE_EDIT" min="0" max="100"/>
 		<ACTION sym="srp_show@sysrepo"/>
 	</COMMAND>
 
 	<COMMAND name="diff" help="Show diff to running-config">
-		<PARAM name="path" min="0" max="100">
-			<PTYPE ref="/PLINE_EDIT"/>
-		</PARAM>
+		<PARAM name="path" ptype="/PLINE_EDIT" min="0" max="100"/>
 		<ACTION sym="srp_diff@sysrepo"/>
 	</COMMAND>
 
 <!--
 	<COMMAND name="deactivate" help="Deactivate statement">
-		<PARAM name="path" max="100">
-			<PTYPE ref="/PLINE_DEL"/>
-		</PARAM>
+		<PARAM name="path" ptype="/PLINE_DEL" max="100"/>
 		<ACTION sym="srp_deactivate@sysrepo"/>
 	</COMMAND>
 -->
