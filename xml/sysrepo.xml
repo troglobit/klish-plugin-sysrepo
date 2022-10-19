@@ -85,6 +85,10 @@
 		<ACTION sym="prompt">%u@%h# </ACTION>
 	</PROMPT>
 
+	<HOTKEY key="^Z" cmd="exit"/>
+
+	<HOTKEY key="^@" cmd="show"/>
+
 	<COMMAND name="exit" help="Exit configuration mode or level up">
 		<ACTION sym="srp_up@sysrepo"/>
 		<ACTION sym="nav" exec_on="fail">replace main</ACTION>
