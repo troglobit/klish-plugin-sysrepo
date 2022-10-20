@@ -96,7 +96,7 @@ static const char *diff_prefix(enum diff_op op, uint32_t flags)
 
 static const char *diff_suffix(enum diff_op op, uint32_t flags)
 {
-	if (flags & PPARSE_COLORIZE)
+	if ((flags & PPARSE_COLORIZE) && (DIFF_OP_NONE != op))
 		return "\x1b[0m";
 
 	return "";
