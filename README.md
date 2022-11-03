@@ -1,38 +1,42 @@
-# Klish Project
+# Klish-plugin-sysrepo Project
 
 ## About
 
-The klish is a framework for implementing a CISCO-like CLI on a UNIX systems.
-
-NOTE: It's a development branch for fully rewritten klish version 3.
-It's not functional for now.
-For stable klish version 2 see the "2.2" branch.
-
-The main target for the klish is a Linux platform.
+This plugin allows klish framework to implement Juniper-like interface
+for configuration. It uses sysrepo project as background for datastores and
+libyang for yang files parsing and configuration schemes.
 
 
 ## Build
 
-NOTE:
-You need branch "master" for development non-stable version.
-You need branch "2.2" for stable version.
+Plugin depend on following projects:
+ - faux
+ - klish
+ - libyang
+ - sysrepo
 
-The development master branch needs libfaux (http://faux.libcode.org) to be built.
-The stable branch 2.2 doesn't need libfaux library.
-
+The klish-plugin-1.0.0 uses klish-3.0.0, faux-2.1.0 for build.
 
 ## Resources
 
-Homepage : http://klish.libcode.org
+Homepage : https://src.libcode.org/pkun/klish-plugin-sysrepo
 
 Docs : See the sourcecode tree "doc/" dir for documenation
 
-Repository : https://src.libcode.org/pkun/klish
+Repository : https://src.libcode.org/pkun/klish-plugin-sysrepo
+
+Faux project repository: https://src.libcode.org/pkun/faux
+
+Klish project repository: https://src.libcode.org/pkun/klish
+
+LibYANG project repository: https://github.com/CESNET/libyang
+
+SysRepo project repository: https://github.com/sysrepo/sysrepo
 
 Mailing list : http://groups.google.com/group/klish
 
 Dev mailing list : http://groups.google.com/group/klish-dev
 
-Download : https://src.libcode.org/download/klish/
+Download : https://src.libcode.org/download/klish-plugin-sysrepo/
 
-Author : Serj Kalichev `serj.kalichev(_at_)libcode.org`
+Author : Serj Kalichev `pkun(_at_)libcode.org`

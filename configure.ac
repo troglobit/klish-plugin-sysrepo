@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-m4_define([MAJOR_VERSION], 3)
+m4_define([MAJOR_VERSION], 1)
 m4_define([MINOR_VERSION], 0)
 m4_define([MICRO_VERSION], 0)
 
@@ -13,7 +13,7 @@ AC_CONFIG_AUX_DIR(aux_scripts)
 AC_CONFIG_MACRO_DIR([m4])
 
 # Values for SONAME. See -version-info for details.
-AC_SUBST(SONAME_CURRENT, 3)
+AC_SUBST(SONAME_CURRENT, 1)
 AC_SUBST(SONAME_REVISION, 0)
 AC_SUBST(SONAME_AGE, 0)
 
