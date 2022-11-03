@@ -62,7 +62,9 @@ int kplugin_sysrepo_init(kcontext_t *context)
 		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
 	kplugin_add_syms(plugin, ksym_new_ext("srp_prompt_edit_path", srp_prompt_edit_path,
 		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
-	kplugin_add_syms(plugin, ksym_new_ext("srp_compl_xpath", srp_compl_xpath,
+	kplugin_add_syms(plugin, ksym_new_ext("srp_compl_xpath_running", srp_compl_xpath_running,
+		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
+	kplugin_add_syms(plugin, ksym_new_ext("srp_compl_xpath_candidate", srp_compl_xpath_candidate,
 		KSYM_USERDEFINED_PERMANENT, KSYM_UNSYNC));
 
 	// Operations

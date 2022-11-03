@@ -1128,7 +1128,7 @@ err:
 }
 
 
-int srp_compl_xpath(kcontext_t *context)
+static int srp_compl_xpath(kcontext_t *context, const sr_datastore_t datastore)
 {
 	sr_conn_ctx_t *conn = NULL;
 	sr_session_ctx_t *sess = NULL;
@@ -1144,7 +1144,7 @@ int srp_compl_xpath(kcontext_t *context)
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn))
 		return -1;
-	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+	if (sr_session_start(conn, datastore, &sess)) {
 		sr_disconnect(conn);
 		return -1;
 	}
@@ -1162,4 +1162,16 @@ int srp_compl_xpath(kcontext_t *context)
 	sr_disconnect(conn);
 
 	return 0;
+}
+
+
+int srp_compl_xpath_running(kcontext_t *context)
+{
+	return srp_compl_xpath(context, SR_DS_RUNNING);
+}
+
+
+int srp_compl_xpath_candidate(kcontext_t *context)
+{
+	return srp_compl_xpath(context, SR_DS_CANDIDATE);
 }
