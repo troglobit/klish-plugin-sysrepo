@@ -18,6 +18,7 @@
 
 #include <sysrepo.h>
 #include <sysrepo/xpath.h>
+#include <sysrepo/values.h>
 
 #include "pline.h"
 #include "private.h"
@@ -1126,3 +1127,39 @@ err:
 	return ret;
 }
 
+
+int srp_compl_xpath(kcontext_t *context)
+{
+	sr_conn_ctx_t *conn = NULL;
+	sr_session_ctx_t *sess = NULL;
+	sr_val_t *vals = NULL;
+	size_t val_num = 0;
+	size_t i = 0;
+	const char *script = NULL;
+
+	assert(context);
+	script = kcontext_script(context);
+	if (faux_str_is_empty(script))
+		return -1;
+
+	if (sr_connect(SR_CONN_DEFAULT, &conn))
+		return -1;
+	if (sr_session_start(conn, SR_DS_RUNNING, &sess)) {
+		sr_disconnect(conn);
+		return -1;
+	}
+
+	sr_get_items(sess, script, 0, 0, &vals, &val_num);
+	for (i = 0; i < val_num; i++) {
+		char *tmp = sr_val_to_str(&vals[i]);
+		if (!tmp)
+			continue;
+		printf("%s\n", tmp);
+		free(tmp);
+	}
+	sr_free_values(vals, val_num);
+
+	sr_disconnect(conn);
+
+	return 0;
+}
