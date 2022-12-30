@@ -162,5 +162,16 @@ AC_SEARCH_LIBS([sr_connect], [sysrepo],
 	)
 
 
+################################
+# Install XML
+################################
+AC_ARG_ENABLE(xml-install,
+              [AS_HELP_STRING([--enable-xml-install],
+                              [Install sysrepo related XML file(s) [default=no]])],
+              [],
+              [enable_xml_install=no])
+AM_CONDITIONAL(XML_INSTALL,test x$enable_xml_install = xyes)
+
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

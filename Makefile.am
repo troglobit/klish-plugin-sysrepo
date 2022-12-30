@@ -27,3 +27,6 @@ EXTRA_DIST =
 
 include $(top_srcdir)/bin/Makefile.am
 include $(top_srcdir)/src/Makefile.am
+
+xmldir = $(sysconfdir)/klish
+dist_xml_DATA = xml/sysrepo.xml
