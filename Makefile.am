@@ -19,14 +19,15 @@ lib_LIBRARIES =
 nobase_include_HEADERS =
 noinst_HEADERS =
 
-EXTRA_DIST =
+EXTRA_DIST = \
 	bin/Makefile.am \
-	src/Makefile.am
+	src/Makefile.am \
 	LICENCE \
-	README.md
+	README.md \
+	xml
 
 include $(top_srcdir)/bin/Makefile.am
 include $(top_srcdir)/src/Makefile.am
 
-xmldir = $(sysconfdir)/klish
-dist_xml_DATA = xml/sysrepo.xml
+#xmldir = $(sysconfdir)/klish
+#dist_xml_DATA = xml/sysrepo.xml
