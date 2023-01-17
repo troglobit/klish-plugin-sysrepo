@@ -82,7 +82,7 @@
 
 	<PROMPT>
 		<ACTION sym="srp_prompt_edit_path@sysrepo"/>
-		<ACTION sym="prompt">%u@%h# </ACTION>
+		<ACTION sym="prompt" exec_on="always">%u@%h# </ACTION>
 	</PROMPT>
 
 	<HOTKEY key="^Z" cmd="exit"/>
