@@ -21,7 +21,7 @@ The klish-plugin-1.0.0 uses klish-3.0.0, faux-2.1.0 for build.
 
 Homepage : https://src.libcode.org/pkun/klish-plugin-sysrepo
 
-Docs : See the sourcecode tree "doc/" dir for documenation
+Docs : https://src.libcode.org/pkun/klish-plugin-sysrepo/src/master/docs/klish-plugin-sysrepo.ru.md
 
 Repository : https://src.libcode.org/pkun/klish-plugin-sysrepo
 
