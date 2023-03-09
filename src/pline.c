@@ -347,6 +347,8 @@ size_t list_num_of_keys(const struct lysc_node *node)
 }
 
 
+// Get module name by internal prefix. Sysrepo requests use module names but not
+// prefixes.
 static const char *module_by_prefix(const struct lysp_module *parsed, const char *prefix)
 {
 	LY_ARRAY_COUNT_TYPE u = 0;
@@ -356,6 +358,11 @@ static const char *module_by_prefix(const struct lysp_module *parsed, const char
 	if (!prefix)
 		return NULL;
 
+	// Try prefix of module itself
+	if (faux_str_cmp(prefix, parsed->mod->prefix) == 0)
+		return parsed->mod->name;
+
+	// Try imported modules
 	LY_ARRAY_FOR(parsed->imports, u) {
 		const struct lysp_import *import = &parsed->imports[u];
 		if (faux_str_cmp(prefix, import->prefix) == 0)
@@ -1048,6 +1055,7 @@ void pline_print_completions(const pline_t *pline, bool_t help)
 			size_t val_num = 0;
 			size_t i = 0;
 
+//printf("%s\n", pcompl->xpath);
 			sr_get_items(pline->sess, pcompl->xpath,
 				0, 0, &vals, &val_num);
 			for (i = 0; i < val_num; i++) {
