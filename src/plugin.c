@@ -9,6 +9,7 @@
 #include <faux/faux.h>
 #include <faux/str.h>
 #include <faux/ini.h>
+#include <faux/conv.h>
 #include <klish/kplugin.h>
 #include <klish/kcontext.h>
 
@@ -21,7 +22,7 @@
 const uint8_t kplugin_sysrepo_major = KPLUGIN_MAJOR;
 const uint8_t kplugin_sysrepo_minor = KPLUGIN_MINOR;
 
-static uint32_t parse_plugin_conf(const char *conf, uint32_t default_flags);
+static int parse_plugin_conf(const char *conf, pline_opts_t *opts);
 
 
 int kplugin_sysrepo_init(kcontext_t *context)
@@ -90,7 +91,18 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	udata = faux_zmalloc(sizeof(*udata));
 	assert(udata);
 	udata->path = NULL;
-	udata->flags = parse_plugin_conf(kplugin_conf(plugin), SRP_DEFAULT_PARSE_OPTS);
+
+	// Settings
+	udata->opts.begin_bracket = '{';
+	udata->opts.end_bracket = '}';
+	udata->opts.show_brackets = BOOL_TRUE;
+	udata->opts.show_semicolons = BOOL_TRUE;
+	udata->opts.first_key_w_stmt = BOOL_FALSE;
+	udata->opts.multi_keys_w_stmt = BOOL_TRUE;
+	udata->opts.colorize = BOOL_TRUE;
+	udata->opts.indent = 2;
+	parse_plugin_conf(kplugin_conf(plugin), &udata->opts);
+
 	kplugin_set_udata(plugin, udata);
 
 	return 0;
@@ -114,7 +126,7 @@ int kplugin_sysrepo_fini(kcontext_t *context)
 }
 
 
-uint32_t srp_udata_flags(kcontext_t *context)
+pline_opts_t *srp_udata_opts(kcontext_t *context)
 {
 	srp_udata_t *udata = NULL;
 
@@ -123,7 +135,7 @@ uint32_t srp_udata_flags(kcontext_t *context)
 	udata = (srp_udata_t *)kcontext_udata(context);
 	assert(udata);
 
-	return udata->flags;
+	return &udata->opts;
 }
 
 
@@ -154,50 +166,64 @@ void srp_udata_set_path(kcontext_t *context, faux_argv_t *path)
 }
 
 
-static uint32_t parse_plugin_conf(const char *conf, uint32_t default_flags)
+static int parse_plugin_conf(const char *conf, pline_opts_t *opts)
 {
-	uint32_t flags = default_flags;
 	faux_ini_t *ini = NULL;
 	const char *val = NULL;
 
+	if (!opts)
+		return -1;
 	if (!conf)
-		return flags;
+		return 0; // Use defaults
 
 	ini = faux_ini_new();
 	if (!faux_ini_parse_str(ini, conf)) {
 		faux_ini_free(ini);
-		return flags;
+		return -1;
 	}
 
-	if ((val = faux_ini_find(ini, "JuniperLikeShow"))) {
+	if ((val = faux_ini_find(ini, "ShowBrackets"))) {
 		if (faux_str_cmp(val, "y") == 0)
-			flags = flags | PPARSE_JUNIPER_SHOW;
+			opts->show_brackets = BOOL_TRUE;
 		else if (faux_str_cmp(val, "n") == 0)
-			flags = flags & (~(uint32_t)PPARSE_JUNIPER_SHOW);
+			opts->show_brackets = BOOL_FALSE;
+	}
+
+	if ((val = faux_ini_find(ini, "ShowSemicolons"))) {
+		if (faux_str_cmp(val, "y") == 0)
+			opts->show_semicolons = BOOL_TRUE;
+		else if (faux_str_cmp(val, "n") == 0)
+			opts->show_semicolons = BOOL_FALSE;
 	}
 
 	if ((val = faux_ini_find(ini, "FirstKeyWithStatement"))) {
 		if (faux_str_cmp(val, "y") == 0)
-			flags = flags | PPARSE_FIRST_KEY_W_STMT;
+			opts->first_key_w_stmt = BOOL_TRUE;
 		else if (faux_str_cmp(val, "n") == 0)
-			flags = flags & (~(uint32_t)PPARSE_FIRST_KEY_W_STMT);
+			opts->first_key_w_stmt = BOOL_FALSE;
 	}
 
 	if ((val = faux_ini_find(ini, "MultiKeysWithStatement"))) {
 		if (faux_str_cmp(val, "y") == 0)
-			flags = flags | PPARSE_MULTI_KEYS_W_STMT;
+			opts->multi_keys_w_stmt = BOOL_TRUE;
 		else if (faux_str_cmp(val, "n") == 0)
-			flags = flags & (~(uint32_t)PPARSE_MULTI_KEYS_W_STMT);
+			opts->multi_keys_w_stmt = BOOL_FALSE;
 	}
 
 	if ((val = faux_ini_find(ini, "Colorize"))) {
 		if (faux_str_cmp(val, "y") == 0)
-			flags = flags | PPARSE_COLORIZE;
+			opts->colorize = BOOL_TRUE;
 		else if (faux_str_cmp(val, "n") == 0)
-			flags = flags & (~(uint32_t)PPARSE_COLORIZE);
+			opts->colorize = BOOL_FALSE;
+	}
+
+	if ((val = faux_ini_find(ini, "Indent"))) {
+		unsigned char indent = 0;
+		if (faux_conv_atouc(val, &indent, 10))
+			opts->indent = indent;
 	}
 
 	faux_ini_free(ini);
 
-	return flags;
+	return 0;
 }

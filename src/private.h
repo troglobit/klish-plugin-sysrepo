@@ -15,18 +15,12 @@
 // Plugin's user-data structure
 typedef struct {
 	faux_argv_t *path; // Current data hierarchy path ('edit' operation)
-	uint32_t flags; // Parse/Show flags
+	pline_opts_t opts; // Settings
 } srp_udata_t;
 
 
 // Repository to edit with srp commands
 #define SRP_REPO_EDIT SR_DS_CANDIDATE
-
-// Defaut parse options
-#define SRP_DEFAULT_PARSE_OPTS ( \
-	PPARSE_MULTI_KEYS_W_STMT | \
-	PPARSE_JUNIPER_SHOW \
-	)
 
 
 C_DECL_BEGIN
@@ -63,7 +57,7 @@ int srp_diff(kcontext_t *context);
 int srp_deactivate(kcontext_t *context);
 
 // Plugin's user-data service functions
-uint32_t srp_udata_flags(kcontext_t *context);
+pline_opts_t *srp_udata_opts(kcontext_t *context);
 faux_argv_t *srp_udata_path(kcontext_t *context);
 void srp_udata_set_path(kcontext_t *context, faux_argv_t *path);
 
@@ -75,9 +69,9 @@ enum diff_op {
     DIFF_OP_NONE,
 };
 
-bool_t show_xpath(sr_session_ctx_t *sess, const char *xpath, uint32_t flags);
+bool_t show_xpath(sr_session_ctx_t *sess, const char *xpath, pline_opts_t *opts);
 void show_subtree(const struct lyd_node *nodes_list, size_t level,
-	enum diff_op op, uint32_t flags);
+	enum diff_op op, pline_opts_t *opts);
 
 // Sysrepo copy-paste
 int sr_module_is_internal(const struct lys_module *ly_mod);

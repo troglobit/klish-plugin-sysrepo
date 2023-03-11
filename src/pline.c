@@ -523,7 +523,7 @@ static char *leafref_xpath(const struct lysc_node *node, const char *node_path)
 
 
 static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *argv,
-	pline_t *pline, uint32_t flags)
+	pline_t *pline, pline_opts_t *opts)
 {
 	faux_argv_node_t *arg = faux_argv_iter(argv);
 	const struct lysc_node *node = NULL;
@@ -629,8 +629,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 					assert (leaf->type->basetype != LY_TYPE_EMPTY);
 
 					// Parse statement if necessary
-					if ((first_key && (flags & PPARSE_FIRST_KEY_W_STMT)) ||
-						(!first_key && (flags & PPARSE_MULTI_KEYS_W_STMT))) {
+					if ((first_key && opts->first_key_w_stmt) ||
+						(!first_key && opts->multi_keys_w_stmt)) {
 						// Completion
 						if (!str) {
 							pline_add_compl(pline,
@@ -821,7 +821,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 }
 
 
-pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
+pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, pline_opts_t *opts)
 {
 	const struct ly_ctx *ctx = NULL;
 	struct lys_module *module = NULL;
@@ -851,7 +851,7 @@ pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 			continue;
 		if (!module->compiled->data)
 			continue;
-		if (pline_parse_module(module, argv, pline, flags))
+		if (pline_parse_module(module, argv, pline, opts))
 			break; // Found
 	}
 
@@ -864,8 +864,6 @@ pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags)
 		if (!expr->active)
 			faux_list_del(pline->exprs, last_expr_node);
 	}
-
-	flags = flags; // Happy compiler
 
 	return pline;
 }

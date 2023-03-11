@@ -110,13 +110,17 @@ typedef struct pline_s {
 } pline_t;
 
 
-// Parse options
-typedef enum {
-	PPARSE_FIRST_KEY_W_STMT		= 0x00000001,
-	PPARSE_MULTI_KEYS_W_STMT	= 0x00000002,
-	PPARSE_JUNIPER_SHOW		= 0x00010000,
-	PPARSE_COLORIZE			= 0x00008000,
-} pparse_flags_e;
+// Parse/show settings
+typedef struct {
+	char begin_bracket;
+	char end_bracket;
+	bool_t show_brackets;
+	bool_t show_semicolons;
+	bool_t first_key_w_stmt;
+	bool_t multi_keys_w_stmt;
+	bool_t colorize;
+	uint8_t indent;
+} pline_opts_t;
 
 
 #define SRP_NODETYPE_CONF (LYS_CONTAINER | LYS_LIST | LYS_LEAF | LYS_LEAFLIST)
@@ -125,7 +129,7 @@ typedef enum {
 C_DECL_BEGIN
 
 pline_t *pline_new(sr_session_ctx_t *sess);
-pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, uint32_t flags);
+pline_t *pline_parse(sr_session_ctx_t *sess, faux_argv_t *argv, pline_opts_t *opts);
 pexpr_t *pline_current_expr(pline_t *pline);
 
 void pline_free(pline_t *pline);

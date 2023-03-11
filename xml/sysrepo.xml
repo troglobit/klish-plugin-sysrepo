@@ -5,10 +5,12 @@
 	xsi:schemaLocation="https://src.libcode.org/pkun/klish/src/master/klish.xsd">
 
 <PLUGIN name="sysrepo">
-	JuniperLikeShow = y
+	ShowBrackets = y
+	ShowSemicolons = y
 	FirstKeyWithStatement = n
 	MultiKeysWithStatement = y
 	Colorize = y
+	Indent = 2
 </PLUGIN>
 
 
