@@ -23,6 +23,22 @@
 #include "pline.h"
 #include "private.h"
 
+#define ERRORMSG "Error: "
+
+
+static void _log(LY_LOG_LEVEL level, const char *msg, const char *path)
+{
+	fprintf(stderr, ERRORMSG "%s %s\n", msg, path ? path : "");
+}
+
+
+int srp_set_log_func(void)
+{
+	ly_set_log_clb(_log, 1);
+
+	return 0;
+}
+
 
 static faux_argv_t *param2argv(const faux_argv_t *cur_path,
 	const kpargv_t *pargv, const char *entry_name)
@@ -339,7 +355,7 @@ int srp_set(kcontext_t *context)
 	faux_argv_free(args);
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid set request\n");
+		fprintf(stderr, ERRORMSG "Invalid set request.\n");
 		ret = -1;
 		goto cleanup;
 	}
@@ -348,26 +364,28 @@ int srp_set(kcontext_t *context)
 	while ((expr = (pexpr_t *)faux_list_each(&iter))) {
 		if (!(expr->pat & PT_SET)) {
 			err_num++;
-			fprintf(stderr, "Illegal expression for set operation\n");
+			fprintf(stderr, ERRORMSG "Illegal expression for set operation.\n");
 			break;
 		}
 		if (sr_set_item_str(sess, expr->xpath, expr->value, NULL, 0) !=
 			SR_ERR_OK) {
 			err_num++;
-			fprintf(stderr, "Can't set data\n");
+			fprintf(stderr, ERRORMSG "Can't set data.\n");
 			break;
 		}
 	}
-
-	if (sr_has_changes(sess)) {
-		if (err_num > 0)
-			sr_discard_changes(sess);
-		else
-			sr_apply_changes(sess, 0);
-	}
-
 	if (err_num > 0)
 		ret = -1;
+
+	if (!sr_has_changes(sess))
+		goto cleanup;
+
+	if (err_num > 0) {
+		sr_discard_changes(sess);
+		goto cleanup;
+	}
+
+	sr_apply_changes(sess, 0);
 
 cleanup:
 	pline_free(pline);
@@ -403,24 +421,24 @@ int srp_del(kcontext_t *context)
 	faux_argv_free(args);
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid 'del' request\n");
+		fprintf(stderr, ERRORMSG "Invalid 'del' request.\n");
 		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
-		fprintf(stderr, "Can't delete more than one object\n");
+		fprintf(stderr, ERRORMSG "Can't delete more than one object.\n");
 		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 
 	if (!(expr->pat & PT_DEL)) {
-		fprintf(stderr, "Illegal expression for 'del' operation\n");
+		fprintf(stderr, ERRORMSG "Illegal expression for 'del' operation.\n");
 		goto err;
 	}
 
 	if (sr_delete_item(sess, expr->xpath, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Can't delete data\n");
+		fprintf(stderr, ERRORMSG "Can't delete data.\n");
 		goto err;
 	}
 
@@ -460,24 +478,24 @@ int srp_edit(kcontext_t *context)
 	pline = pline_parse(sess, args, srp_udata_opts(context));
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid 'edit' request\n");
+		fprintf(stderr, ERRORMSG "Invalid 'edit' request.\n");
 		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
-		fprintf(stderr, "Can't process more than one object\n");
+		fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 
 	if (!(expr->pat & PT_EDIT)) {
-		fprintf(stderr, "Illegal expression for 'edit' operation\n");
+		fprintf(stderr, ERRORMSG "Illegal expression for 'edit' operation.\n");
 		goto err;
 	}
 
 	if (sr_set_item_str(sess, expr->xpath, NULL, NULL, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Can't set editing data\n");
+		fprintf(stderr, ERRORMSG "Can't set editing data.\n");
 		goto err;
 	}
 	sr_apply_changes(sess, 0);
@@ -600,19 +618,19 @@ int srp_insert(kcontext_t *context)
 	faux_argv_free(insert_from);
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid 'from' expression\n");
+		fprintf(stderr, ERRORMSG "Invalid 'from' expression.\n");
 		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
-		fprintf(stderr, "Can't process more than one object\n");
+		fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 
 	if (!(expr->pat & PT_INSERT)) {
-		fprintf(stderr, "Illegal 'from' expression for 'insert' operation\n");
+		fprintf(stderr, ERRORMSG "Illegal 'from' expression for 'insert' operation.\n");
 		goto err;
 	}
 
@@ -626,7 +644,7 @@ int srp_insert(kcontext_t *context)
 	else if (kpargv_find(pargv, "after"))
 		position = SR_MOVE_AFTER;
 	else {
-		fprintf(stderr, "Illegal 'position' argument\n");
+		fprintf(stderr, ERRORMSG "Illegal 'position' argument.\n");
 		goto err;
 	}
 
@@ -638,19 +656,19 @@ int srp_insert(kcontext_t *context)
 		faux_argv_free(insert_to);
 
 		if (pline_to->invalid) {
-			fprintf(stderr, "Invalid 'to' expression\n");
+			fprintf(stderr, ERRORMSG "Invalid 'to' expression.\n");
 			goto err;
 		}
 
 		if (faux_list_len(pline_to->exprs) > 1) {
-			fprintf(stderr, "Can't process more than one object\n");
+			fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 			goto err;
 		}
 
 		expr_to = (pexpr_t *)faux_list_data(faux_list_head(pline_to->exprs));
 
 		if (!(expr_to->pat & PT_INSERT)) {
-			fprintf(stderr, "Illegal 'to' expression for 'insert' operation\n");
+			fprintf(stderr, ERRORMSG "Illegal 'to' expression for 'insert' operation.\n");
 			goto err;
 		}
 
@@ -662,7 +680,7 @@ int srp_insert(kcontext_t *context)
 
 	if (sr_move_item(sess, expr->xpath, position,
 		list_keys, leaflist_value, NULL, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Can't move element\n");
+		fprintf(stderr, ERRORMSG "Can't move element.\n");
 		goto err;
 	}
 	sr_apply_changes(sess, 0);
@@ -686,18 +704,18 @@ int srp_verify(kcontext_t *context)
 	assert(context);
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
-		fprintf(stderr, "Can't connect to data repository\n");
+		fprintf(stderr, ERRORMSG "Can't connect to data repository.\n");
 		return -1;
 	}
 
 	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
-		fprintf(stderr, "Can't connect to candidate data store\n");
+		fprintf(stderr, ERRORMSG "Can't connect to candidate data store.\n");
 		goto err;
 	}
 
 	// Validate candidate config
 	if (sr_validate(sess, NULL, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Invalid candidate configuration\n");
+		fprintf(stderr, ERRORMSG "Invalid candidate configuration.\n");
 		goto err;
 	}
 
@@ -718,32 +736,32 @@ int srp_commit(kcontext_t *context)
 	assert(context);
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
-		fprintf(stderr, "Can't connect to data repository\n");
+		fprintf(stderr, ERRORMSG "Can't connect to data repository.\n");
 		return -1;
 	}
 
 	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
-		fprintf(stderr, "Can't connect to candidate data store\n");
+		fprintf(stderr, ERRORMSG "Can't connect to candidate data store.\n");
 		goto err;
 	}
 
 	// Copy candidate to running-config
 	if (sr_session_switch_ds(sess, SR_DS_RUNNING)) {
-		fprintf(stderr, "Can't connect to running-config data store\n");
+		fprintf(stderr, ERRORMSG "Can't connect to running-config data store.\n");
 		goto err;
 	}
 	if (sr_copy_config(sess, NULL, SRP_REPO_EDIT, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Can't commit to running-config\n");
+		fprintf(stderr, ERRORMSG "Can't commit to running-config.\n");
 		goto err;
 	}
 
 	// Copy running-config to startup-config
 	if (sr_session_switch_ds(sess, SR_DS_STARTUP)) {
-		fprintf(stderr, "Can't connect to startup-config data store\n");
+		fprintf(stderr, ERRORMSG "Can't connect to startup-config data store.\n");
 		goto err;
 	}
 	if (sr_copy_config(sess, NULL, SR_DS_RUNNING, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Can't store data to startup-config\n");
+		fprintf(stderr, ERRORMSG "Can't store data to startup-config.\n");
 		goto err;
 	}
 
@@ -764,17 +782,17 @@ int srp_rollback(kcontext_t *context)
 	assert(context);
 
 	if (sr_connect(SR_CONN_DEFAULT, &conn)) {
-		fprintf(stderr, "Can't connect to data repository\n");
+		fprintf(stderr, ERRORMSG "Can't connect to data repository.\n");
 		return -1;
 	}
 
 	// Copy running-config to candidate config
 	if (sr_session_start(conn, SRP_REPO_EDIT, &sess)) {
-		fprintf(stderr, "Can't connect to candidate data store\n");
+		fprintf(stderr, ERRORMSG "Can't connect to candidate data store.\n");
 		goto err;
 	}
 	if (sr_copy_config(sess, NULL, SR_DS_RUNNING, 0) != SR_ERR_OK) {
-		fprintf(stderr, "Can't rollback to running-config\n");
+		fprintf(stderr, ERRORMSG "Can't rollback to running-config.\n");
 		goto err;
 	}
 
@@ -814,23 +832,23 @@ int srp_show_xml(kcontext_t *context)
 	faux_argv_free(args);
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid 'show' request\n");
+		fprintf(stderr, ERRORMSG "Invalid 'show' request.\n");
 		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
-		fprintf(stderr, "Can't process more than one object\n");
+		fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 	if (!(expr->pat & PT_EDIT)) {
-		fprintf(stderr, "Illegal expression for 'show' operation\n");
+		fprintf(stderr, ERRORMSG "Illegal expression for 'show' operation.\n");
 		goto err;
 	}
 
 	if (sr_get_subtree(sess, expr->xpath, 0, &data) != SR_ERR_OK) {
-		fprintf(stderr, "Can't get specified subtree\n");
+		fprintf(stderr, ERRORMSG "Can't get specified subtree.\n");
 		goto err;
 	}
 
@@ -887,25 +905,25 @@ static int show(kcontext_t *context, sr_datastore_t ds)
 		faux_argv_free(args);
 
 		if (pline->invalid) {
-			fprintf(stderr, "Invalid 'show' request\n");
+			fprintf(stderr, ERRORMSG "Invalid 'show' request.\n");
 			goto err;
 		}
 
 		if (faux_list_len(pline->exprs) > 1) {
-			fprintf(stderr, "Can't process more than one object\n");
+			fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 			goto err;
 		}
 
 		if (!(expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs)))) {
-			fprintf(stderr, "Can't get expression\n");
+			fprintf(stderr, ERRORMSG "Can't get expression.\n");
 			goto err;
 		}
 		if (!(expr->pat & PT_EDIT)) {
-			fprintf(stderr, "Illegal expression for 'show' operation\n");
+			fprintf(stderr, ERRORMSG "Illegal expression for 'show' operation.\n");
 			goto err;
 		}
 		if (!expr->xpath) {
-			fprintf(stderr, "Empty expression for 'show' operation\n");
+			fprintf(stderr, ERRORMSG "Empty expression for 'show' operation.\n");
 			goto err;
 		}
 		xpath = expr->xpath;
@@ -974,28 +992,28 @@ int srp_deactivate(kcontext_t *context)
 	faux_argv_free(args);
 
 	if (pline->invalid) {
-		fprintf(stderr, "Invalid 'show' request\n");
+		fprintf(stderr, ERRORMSG "Invalid 'show' request.\n");
 		goto err;
 	}
 
 	if (faux_list_len(pline->exprs) > 1) {
-		fprintf(stderr, "Can't process more than one object\n");
+		fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 		goto err;
 	}
 
 	expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs));
 	if (!(expr->pat & PT_DEL)) {
-		fprintf(stderr, "Illegal expression for 'show' operation\n");
+		fprintf(stderr, ERRORMSG "Illegal expression for 'show' operation.\n");
 		goto err;
 	}
 
 	if (sr_get_subtree(sess, expr->xpath, 0, &data) != SR_ERR_OK) {
-		fprintf(stderr, "Can't get specified subtree\n");
+		fprintf(stderr, ERRORMSG "Can't get specified subtree.\n");
 		goto err;
 	}
 	if (lyd_new_meta(LYD_CTX(data->tree), data->tree, NULL,
 		"junos-configuration-metadata:active", "false", 0, NULL)) {
-		fprintf(stderr, "Can't deactivate\n");
+		fprintf(stderr, ERRORMSG "Can't deactivate.\n");
 		goto err;
 	}
 
@@ -1004,16 +1022,16 @@ int srp_deactivate(kcontext_t *context)
 		printf("META\n");
 
 	if (sr_has_changes(sess))
-		fprintf(stderr, "Has changes\n");
+		fprintf(stderr, ERRORMSG "Has changes.\n");
 
 	if (sr_apply_changes(sess, 0)) {
-		fprintf(stderr, "Can't apply changes\n");
+		fprintf(stderr, ERRORMSG "Can't apply changes.\n");
 	}
 	sr_release_data(data);
 
 
 	if (sr_get_subtree(sess, expr->xpath, 0, &data) != SR_ERR_OK) {
-		fprintf(stderr, "Can't get specified subtree\n");
+		fprintf(stderr, ERRORMSG "Can't get specified subtree.\n");
 		goto err;
 	}
 
@@ -1070,25 +1088,25 @@ int srp_diff(kcontext_t *context)
 		faux_argv_free(args);
 
 		if (pline->invalid) {
-			fprintf(stderr, "Invalid 'show' request\n");
+			fprintf(stderr, ERRORMSG "Invalid 'show' request.\n");
 			goto err;
 		}
 
 		if (faux_list_len(pline->exprs) > 1) {
-			fprintf(stderr, "Can't process more than one object\n");
+			fprintf(stderr, ERRORMSG "Can't process more than one object.\n");
 			goto err;
 		}
 
 		if (!(expr = (pexpr_t *)faux_list_data(faux_list_head(pline->exprs)))) {
-			fprintf(stderr, "Can't get expression\n");
+			fprintf(stderr, ERRORMSG "Can't get expression.\n");
 			goto err;
 		}
 		if (!(expr->pat & PT_EDIT)) {
-			fprintf(stderr, "Illegal expression for 'show' operation\n");
+			fprintf(stderr, ERRORMSG "Illegal expression for 'show' operation.\n");
 			goto err;
 		}
 		if (!expr->xpath) {
-			fprintf(stderr, "Empty expression for 'show' operation\n");
+			fprintf(stderr, ERRORMSG "Empty expression for 'show' operation.\n");
 			goto err;
 		}
 		xpath = expr->xpath;
@@ -1098,16 +1116,16 @@ int srp_diff(kcontext_t *context)
 		xpath = "/*";
 
 	if (sr_get_data(sess1, xpath, 0, 0, 0, &data1) != SR_ERR_OK) {
-		fprintf(stderr, "Can't get specified subtree\n");
+		fprintf(stderr, ERRORMSG "Can't get specified subtree.\n");
 		goto err;
 	}
 	if (sr_get_data(sess2, xpath, 0, 0, 0, &data2) != SR_ERR_OK) {
-		fprintf(stderr, "Can't get specified subtree\n");
+		fprintf(stderr, ERRORMSG "Can't get specified subtree.\n");
 		goto err;
 	}
 
 	if (lyd_diff_siblings(data1->tree, data2->tree, 0, &diff) != LY_SUCCESS) {
-		fprintf(stderr, "Can't generate diff\n");
+		fprintf(stderr, ERRORMSG "Can't generate diff.\n");
 		goto err;
 	}
 

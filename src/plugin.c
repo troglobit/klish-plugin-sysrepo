@@ -13,9 +13,6 @@
 #include <klish/kplugin.h>
 #include <klish/kcontext.h>
 
-#include <sysrepo.h>
-#include <sysrepo/xpath.h>
-
 #include "private.h"
 
 
@@ -104,6 +101,9 @@ int kplugin_sysrepo_init(kcontext_t *context)
 	parse_plugin_conf(kplugin_conf(plugin), &udata->opts);
 
 	kplugin_set_udata(plugin, udata);
+
+	// Logging
+	srp_set_log_func();
 
 	return 0;
 }

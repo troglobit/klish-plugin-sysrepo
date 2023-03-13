@@ -56,6 +56,9 @@ int srp_show_running(kcontext_t *context);
 int srp_diff(kcontext_t *context);
 int srp_deactivate(kcontext_t *context);
 
+// Logging
+int srp_set_log_func(void);
+
 // Plugin's user-data service functions
 pline_opts_t *srp_udata_opts(kcontext_t *context);
 faux_argv_t *srp_udata_path(kcontext_t *context);
