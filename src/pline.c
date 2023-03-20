@@ -171,17 +171,23 @@ static void pline_add_compl_subtree(pline_t *pline, const struct lys_module *mod
 
 	assert(pline);
 	assert(module);
-
 	if (node)
 		subtree = lysc_node_child(node);
 	else
 		subtree = module->compiled->data;
+syslog(LOG_ERR, "COMPL_SUBTREE %s", node?node->name:"");
 
 	LY_LIST_FOR(subtree, iter) {
+syslog(LOG_ERR, "COMPL %x %s", iter->nodetype, iter->name);
 		if (!(iter->nodetype & SRP_NODETYPE_CONF))
 			continue;
 		if (!(iter->flags & LYS_CONFIG_W))
 			continue;
+		if (iter->nodetype & (LYS_CHOICE | LYS_CASE)) {
+syslog(LOG_ERR, "IN %s", iter->name);
+			pline_add_compl_subtree(pline, module, iter);
+			continue;
+		}
 		pline_add_compl(pline, PCOMPL_NODE, iter, NULL);
 	}
 }
@@ -541,6 +547,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 	// modules don't recognize argument.
 	pline->invalid = BOOL_FALSE;
 
+syslog(LOG_ERR, "begin");
 	do {
 		pexpr_t *pexpr = pline_current_expr(pline);
 		const char *str = (const char *)faux_argv_current(arg);
@@ -549,6 +556,7 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 
 		rollback = BOOL_FALSE;
 
+syslog(LOG_ERR, "LYS %x", node ? node->nodetype : 0);
 		if (node && !is_rollback) {
 			char *tmp = NULL;
 
@@ -796,6 +804,8 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 			pline_add_expr(pline, rollback_xpath,
 				rollback_args_num, rollback_list_pos);
 			rollback = BOOL_TRUE;
+		} else {
+			syslog(LOG_ERR, "Unknown lys %x", node->nodetype);
 		}
 
 		// Current argument was not consumed.
