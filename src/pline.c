@@ -175,16 +175,13 @@ static void pline_add_compl_subtree(pline_t *pline, const struct lys_module *mod
 		subtree = lysc_node_child(node);
 	else
 		subtree = module->compiled->data;
-syslog(LOG_ERR, "COMPL_SUBTREE %s", node?node->name:"");
 
 	LY_LIST_FOR(subtree, iter) {
-syslog(LOG_ERR, "COMPL %x %s", iter->nodetype, iter->name);
 		if (!(iter->nodetype & SRP_NODETYPE_CONF))
 			continue;
 		if (!(iter->flags & LYS_CONFIG_W))
 			continue;
 		if (iter->nodetype & (LYS_CHOICE | LYS_CASE)) {
-syslog(LOG_ERR, "IN %s", iter->name);
 			pline_add_compl_subtree(pline, module, iter);
 			continue;
 		}
@@ -282,6 +279,15 @@ static const struct lysc_node *find_child(const struct lysc_node *node,
 			continue;
 		if (!(iter->flags & LYS_CONFIG_W))
 			continue;
+		// Special case. LYS_CHOICE and LYS_CASE must search for
+		// specified name inside themselfs.
+		if (iter->nodetype & (LYS_CHOICE | LYS_CASE)) {
+			const struct lysc_node *node_in = NULL;
+			node_in = find_child(lysc_node_child(iter), name);
+			if (node_in)
+				return node_in;
+			continue;
+		}
 		if (!faux_str_cmp(iter->name, name))
 			return iter;
 	}
@@ -547,7 +553,6 @@ static bool_t pline_parse_module(const struct lys_module *module, faux_argv_t *a
 	// modules don't recognize argument.
 	pline->invalid = BOOL_FALSE;
 
-syslog(LOG_ERR, "begin");
 	do {
 		pexpr_t *pexpr = pline_current_expr(pline);
 		const char *str = (const char *)faux_argv_current(arg);
@@ -556,7 +561,6 @@ syslog(LOG_ERR, "begin");
 
 		rollback = BOOL_FALSE;
 
-syslog(LOG_ERR, "LYS %x", node ? node->nodetype : 0);
 		if (node && !is_rollback) {
 			char *tmp = NULL;
 
@@ -804,8 +808,24 @@ syslog(LOG_ERR, "LYS %x", node ? node->nodetype : 0);
 			pline_add_expr(pline, rollback_xpath,
 				rollback_args_num, rollback_list_pos);
 			rollback = BOOL_TRUE;
+
+		// LYS_CHOICE and LYS_CASE can appear while rollback only
+		} else if (node->nodetype & (LYS_CHOICE | LYS_CASE)) {
+
+			// Don't set pexpr->pat because CHOICE and CASE can't
+			// appear within data tree (schema only)
+
+			// Completion
+			if (!str) {
+				pline_add_compl_subtree(pline, module, node);
+				break;
+			}
+
+			// Next element
+			node = find_child(lysc_node_child(node), str);
+
 		} else {
-			syslog(LOG_ERR, "Unknown lys %x", node->nodetype);
+			break;
 		}
 
 		// Current argument was not consumed.
