@@ -187,6 +187,14 @@ static void show_leaf(const struct lyd_node *node, size_t level,
 	leaf = (struct lysc_node_leaf *)node->schema;
 	if (leaf->type->basetype != LY_TYPE_EMPTY) {
 		char *value = get_value(node);
+//struct lyd_value *lv = &((const struct lyd_node_term *)node)->value;
+//int rt = lv->realtype->basetype;
+//int rt2 = 0;
+//if (rt == 15) {
+//struct lyd_value_union *lv2 = ((union lyd_value *)lv)->subvalue;
+//rt2 = lv2->realtype->basetype;
+//}
+//		printf(" %s type %d %d", value, rt, rt2);
 		printf(" %s", value);
 		faux_str_free(value);
 	}
