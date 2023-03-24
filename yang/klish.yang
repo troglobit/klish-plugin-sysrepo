@@ -1,0 +1,10 @@
+module klish {
+  namespace "http://klish.libcode.org/yang/klish";
+  prefix "klish";
+  description "Klish extensions. The klish-plugin-sysrepo can use it.";
+
+  extension completion {
+    argument "xpath";
+    description "XPath for autocompletion.";
+  }
+}
